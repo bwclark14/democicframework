@@ -150,3 +150,6 @@ export function renderOverview() {
 
   triggerMath();
 }
+
+// ── Expose to window for inline onchange handler in index.html ────────────────
+window.renderOverview = renderOverview;
