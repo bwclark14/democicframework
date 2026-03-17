@@ -11,6 +11,7 @@ import { renderCompetenciesUI }      from './competencies.js';
 import { renderPlannerGrid }         from './planner.js';
 import { renderOverview }            from './overview.js';
 import { renderMatrix, updateMatrixFilters } from './matrix.js';
+import { renderExplorer, updateExplorerDropdown } from './explorer.js';
 
 import { signInAnonymously, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
@@ -40,6 +41,7 @@ function listenToData() {
     state.curriculumData = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     renderUI();
     updateDropdowns();
+    updateExplorerDropdown();
   });
 
   // Competencies
@@ -61,12 +63,13 @@ function listenToData() {
     if (!isHidden('view-matrix'))   renderMatrix();
     if (!isHidden('view-planner'))  renderPlannerGrid();
     if (!isHidden('view-overview')) renderOverview();
+    if (!isHidden('view-explorer')) renderExplorer();
   });
 }
 
 // ── View switching ────────────────────────────────────────────────────────────
 
-const VIEWS = ['designer', 'planner', 'overview', 'matrix', 'competencies'];
+const VIEWS = ['designer', 'planner', 'overview', 'matrix', 'competencies', 'explorer'];
 
 window.switchView = (view) => {
   VIEWS.forEach((v) => {
@@ -93,6 +96,7 @@ window.switchView = (view) => {
   if (view === 'matrix')       updateMatrixFilters();
   if (view === 'competencies') renderCompetenciesUI();
   if (view === 'planner')      renderPlannerGrid();
+  if (view === 'explorer')     updateExplorerDropdown();
 
   setTimeout(triggerMath, 100);
 };
