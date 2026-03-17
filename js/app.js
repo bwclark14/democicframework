@@ -79,6 +79,16 @@ window.switchView = (view) => {
   document.getElementById(`nav-${view}`).classList.add('bg-white', 'shadow-sm', 'text-indigo-600');
   document.getElementById(`nav-${view}`).classList.remove('text-slate-500');
 
+  // For views with an area select, auto-pick the first option when nothing
+  // is selected so the user sees content immediately on first visit.
+  if (view === 'overview' || view === 'matrix') {
+    const selectId = view === 'overview' ? 'overview-area-select' : 'matrix-area-select';
+    const sel = document.getElementById(selectId);
+    if (sel && !sel.value && sel.options.length > 1) {
+      sel.value = sel.options[1].value;
+    }
+  }
+
   if (view === 'overview')     renderOverview();
   if (view === 'matrix')       updateMatrixFilters();
   if (view === 'competencies') renderCompetenciesUI();
