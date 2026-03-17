@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Curriculum Designer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/autorender.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900 font-sans">
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center space-y-4">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    <p class="text-slate-500 font-medium" id="status-message">Initialising Curriculum Designer...</p>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white border-b sticky top-0 z-40 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-indigo-600 p-2 rounded-lg">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332-4.5 1.253"></path>
+          </svg>
+        </div>
+        <h1 class="text-xl font-bold text-slate-800 tracking-tight">Curriculum Designer</h1>
+      </div>
+
+      <nav class="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg">
+        <button onclick="switchView('designer')" id="nav-designer" class="px-3 py-1.5 rounded-md text-sm font-bold transition bg-white shadow-sm text-indigo-600">Areas</button>
+        <button onclick="switchView('planner')" id="nav-planner" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Know and Do</button>
+        <button onclick="switchView('competencies')" id="nav-competencies" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Competencies</button>
+        <div class="h-4 w-px bg-slate-300 mx-1"></div>
+        <button onclick="switchView('overview')" id="nav-overview" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Overview</button>
+        <button onclick="switchView('matrix')" id="nav-matrix" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Matrix</button>
+      </nav>
+
+      <div id="user-info" class="hidden sm:flex items-center text-sm text-slate-500">
+        <span id="user-display-id" class="font-mono bg-slate-100 px-3 py-1 rounded-full"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- View: Designer (Areas) -->
+  <main id="view-designer" class="view-transition max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900">Curriculum Areas</h2>
+        <p class="text-slate-500 mt-1">Design and manage conceptual progression frameworks.</p>
+      </div>
+      <button onclick="openAreaModal()" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm font-medium">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Add Area
+      </button>
+    </div>
+    <div id="curriculum-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-center">
+      <h3 class="text-lg font-medium text-slate-900">No areas found</h3>
+      <p class="text-slate-500 mt-1">Click the button above to create your first curriculum area.</p>
+    </div>
+  </main>
+
+  <!-- View: Competencies -->
+  <main id="view-competencies" class="view-transition hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900">Competencies</h2>
+        <p class="text-slate-500 mt-1">Define core skills and attributes across the curriculum.</p>
+      </div>
+      <button onclick="openCompetencyModal()" class="inline-flex items-center px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm font-medium">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Add Competency
+      </button>
+    </div>
+    <div id="competency-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </main>
+
+  <!-- View: Know and Do (Planner) -->
+  <main id="view-planner" class="view-transition hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-slate-900">Know and Do</h2>
+      <p class="text-slate-500 mt-1">Map individual statements for each area. Use $...$ for math.</p>
+    </div>
+    <div class="bg-white border rounded-xl p-6 mb-8 shadow-sm">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label class="block">
+            <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Select Curriculum Area</span>
+            <select id="planner-area-select" onchange="loadPlannerData()" class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2.5 border focus:ring-indigo-500 focus:border-indigo-500">
+              <option value="">Choose an area...</option>
+            </select>
+          </label>
+        </div>
+        <div id="planner-concept-container" class="hidden">
+          <label class="block">
+            <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Concept</span>
+            <select id="planner-concept-select" onchange="renderPlannerGrid()" class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2 border focus:ring-indigo-500 focus:border-indigo-500"></select>
+          </label>
+        </div>
+        <div id="planner-organiser-container" class="hidden">
+          <label class="block">
+            <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Organiser</span>
+            <select id="planner-organiser-select" onchange="renderPlannerGrid()" class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2 border focus:ring-indigo-500 focus:border-indigo-500"></select>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div id="planner-grid-container" class="hidden space-y-6">
+      <div id="planner-concept-header" class="bg-indigo-50 border border-indigo-100 rounded-xl p-6 mb-4">
+        <h3 id="planner-header-title" class="text-xl font-bold text-indigo-900 mb-1"></h3>
+        <p id="planner-header-desc" class="text-sm text-indigo-700 leading-relaxed"></p>
+      </div>
+      <div class="flex border-b border-slate-200 bg-white rounded-t-xl overflow-hidden">
+        <button onclick="switchPlannerLevel(1)" id="tab-l1" class="level-tab flex-1 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 transition active">LEVEL 1</button>
+        <button onclick="switchPlannerLevel(2)" id="tab-l2" class="level-tab flex-1 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 transition">LEVEL 2</button>
+        <button onclick="switchPlannerLevel(3)" id="tab-l3" class="level-tab flex-1 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 transition">LEVEL 3</button>
+        <button onclick="switchPlannerLevel(4)" id="tab-l4" class="level-tab flex-1 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 transition">LEVEL 4</button>
+      </div>
+      <div id="planner-level-context" class="bg-white border-x border-b border-slate-200 p-6 rounded-b-xl shadow-sm mb-6">
+        <div class="flex items-center space-x-2 mb-2">
+          <span class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">L<span id="planner-context-level-num">1</span></span>
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Conceptual Level Description</span>
+        </div>
+        <p id="planner-level-desc" class="text-sm text-slate-800 italic leading-relaxed"></p>
+      </div>
+      <div id="planner-active-level-view" class="min-h-[400px]"></div>
+    </div>
+  </main>
+
+  <!-- View: Overview -->
+  <main id="view-overview" class="view-transition hidden max-w-5xl mx-auto px-4 py-8">
+    <div class="no-print bg-white border rounded-xl p-6 mb-8 shadow-sm">
+      <label class="block">
+        <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Select Curriculum Area to View</span>
+        <select id="overview-area-select" onchange="renderOverview()" class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2.5 border focus:ring-indigo-500 focus:border-indigo-500"></select>
+      </label>
+    </div>
+    <div id="overview-content" class="space-y-12"></div>
+  </main>
+
+  <!-- View: Matrix -->
+  <main id="view-matrix" class="view-transition hidden max-w-[1600px] mx-auto px-4 py-8">
+    <div class="no-print bg-white border rounded-xl p-6 mb-8 shadow-sm">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Curriculum Area</label>
+          <select id="matrix-area-select" onchange="updateMatrixFilters()" class="w-full rounded-lg border-slate-300 bg-slate-50 p-2 border"></select>
+        </div>
+        <div>
+          <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Organiser Filter</label>
+          <select id="matrix-organiser-select" onchange="renderMatrix()" class="w-full rounded-lg border-slate-300 bg-slate-50 p-2 border"></select>
+        </div>
+        <div>
+          <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Levels</label>
+          <div class="flex gap-4 items-center h-10">
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l1" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L1</label>
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l2" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L2</label>
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l3" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L3</label>
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l4" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L4</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="matrix-container" class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white"></div>
+  </main>
+
+  <!-- Modal: Competency Info Overlay -->
+  <div id="comp-info-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="p-6 border-b bg-violet-50 flex justify-between items-center">
+        <h3 id="comp-info-title" class="text-xl font-bold text-violet-800"></h3>
+        <button onclick="closeCompInfo()" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <div class="space-y-6">
+          <div>
+            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Description</h4>
+            <p id="comp-info-desc" class="text-sm text-slate-700 leading-relaxed"></p>
+          </div>
+          <div>
+            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Indicators</h4>
+            <ul id="comp-info-indicators" class="space-y-2"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 bg-slate-50 border-t text-center">
+        <button onclick="closeCompInfo()" class="px-6 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100 transition shadow-sm">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Area Editor -->
+  <div id="area-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+      <div class="p-6 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
+        <h3 class="text-xl font-bold text-slate-800" id="modal-title">Area Details</h3>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border">
+            <span class="text-[10px] font-bold text-slate-500 uppercase">Status</span>
+            <select id="area-status" class="text-xs font-bold border-none focus:ring-0 p-0 bg-transparent cursor-pointer">
+              <option value="public" class="text-emerald-600 font-bold">Public</option>
+              <option value="draft" class="text-amber-600 font-bold">Draft</option>
+            </select>
+          </div>
+          <button onclick="closeAreaModal()" class="text-slate-400 hover:text-slate-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+        <form id="area-form" class="space-y-10">
+          <input type="hidden" id="area-id">
+          <div class="space-y-4">
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Title</span>
+              <input type="text" id="area-title" required class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2.5 border focus:ring-indigo-500 focus:border-indigo-500">
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Rationale</span>
+              <textarea id="area-rationale" rows="2" required class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2.5 border focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+            </label>
+          </div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h4 class="text-md font-bold text-indigo-600 uppercase tracking-tight">Big Ideas</h4>
+              <button type="button" onclick="addBigIdeaRow()" class="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-md hover:bg-indigo-100">+ Add Big Idea</button>
+            </div>
+            <div id="big-ideas-list" class="space-y-3"></div>
+          </div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h4 class="text-md font-bold text-emerald-600 uppercase tracking-tight">Concepts &amp; Progression</h4>
+              <button type="button" onclick="addConceptRow()" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-md hover:bg-emerald-100">+ Add Concept</button>
+            </div>
+            <div id="concepts-list" class="space-y-4"></div>
+          </div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h4 class="text-md font-bold text-amber-600 uppercase tracking-tight">Subject Organisers</h4>
+              <button type="button" onclick="addOrganiserRow()" class="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-md hover:bg-amber-100">+ Add Organiser</button>
+            </div>
+            <div id="organisers-list" class="flex flex-wrap gap-2"></div>
+          </div>
+        </form>
+      </div>
+      <div class="p-6 border-t bg-slate-50 flex justify-end space-x-3 rounded-b-xl">
+        <button onclick="closeAreaModal()" class="px-4 py-2 text-slate-600 font-medium">Cancel</button>
+        <button onclick="saveArea()" id="save-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition">Save Area</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Competency Editor -->
+  <div id="competency-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div class="p-6 border-b flex justify-between items-center bg-violet-50 rounded-t-xl">
+        <h3 class="text-xl font-bold text-violet-800" id="comp-modal-title">Competency Details</h3>
+        <button onclick="closeCompetencyModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+        <form id="competency-form" class="space-y-6">
+          <input type="hidden" id="comp-id">
+          <div class="space-y-4">
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Competency Title</span>
+              <input type="text" id="comp-title" required class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2.5 border focus:ring-violet-500 focus:border-violet-500">
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Description</span>
+              <textarea id="comp-description" rows="3" required class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2.5 border focus:ring-violet-500 focus:border-violet-500"></textarea>
+            </label>
+          </div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h4 class="text-md font-bold text-violet-600 uppercase tracking-tight">Indicator Statements</h4>
+              <button type="button" onclick="addIndicatorRow()" class="text-xs font-bold text-violet-700 bg-violet-50 px-3 py-1.5 rounded-md hover:bg-violet-100">+ Add Statement</button>
+            </div>
+            <div id="indicators-list" class="space-y-3"></div>
+          </div>
+        </form>
+      </div>
+      <div class="p-6 border-t bg-slate-50 flex justify-end space-x-3 rounded-b-xl">
+        <button onclick="closeCompetencyModal()" class="px-4 py-2 text-slate-600 font-medium">Cancel</button>
+        <button onclick="saveCompetency()" class="px-6 py-2 bg-violet-600 text-white rounded-lg font-bold shadow-sm hover:bg-violet-700 transition">Save Competency</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
