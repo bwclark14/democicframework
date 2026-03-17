@@ -37,6 +37,7 @@
         <div class="h-4 w-px bg-slate-300 mx-1"></div>
         <button onclick="switchView('overview')" id="nav-overview" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Overview</button>
         <button onclick="switchView('matrix')" id="nav-matrix" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Matrix</button>
+        <button onclick="switchView('explorer')" id="nav-explorer" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Explorer</button>
       </nav>
 
       <div id="user-info" class="hidden sm:flex items-center text-sm text-slate-500">
@@ -170,6 +171,65 @@
       </div>
     </div>
     <div id="matrix-container" class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white"></div>
+  </main>
+
+  <!-- View: Level Explorer -->
+  <main id="view-explorer" class="view-transition hidden max-w-[1600px] mx-auto px-4 py-8">
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-slate-900">Level Explorer</h2>
+      <p class="text-slate-500 mt-1">Select an area, organiser, level and concepts to explore Know and Do bundles by sequence.</p>
+    </div>
+
+    <!-- Filter cascade -->
+    <div class="bg-white border rounded-xl p-6 mb-8 shadow-sm space-y-5 no-print">
+
+      <!-- Area -->
+      <div>
+        <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-1">Curriculum Area</label>
+        <select id="explorer-area-select" onchange="explorerAreaChanged()"
+          class="w-full max-w-sm rounded-lg border-slate-300 bg-slate-50 p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">Choose an area…</option>
+        </select>
+      </div>
+
+      <!-- Organiser -->
+      <div id="explorer-organiser-row" class="hidden">
+        <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-1">Subject Organiser</label>
+        <select id="explorer-organiser-select" onchange="explorerOrganiserChanged()"
+          class="w-full max-w-sm rounded-lg border-slate-300 bg-slate-50 p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+        </select>
+      </div>
+
+      <!-- Level -->
+      <div id="explorer-level-row" class="hidden">
+        <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-1">Level</label>
+        <div class="flex gap-2">
+          <select id="explorer-level-select" onchange="explorerLevelChanged()"
+            class="w-full max-w-xs rounded-lg border-slate-300 bg-slate-50 p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">Choose a level…</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Concepts (multi-select as checkboxes) -->
+      <div id="explorer-concepts-row" class="hidden">
+        <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Concepts</label>
+        <div id="explorer-concepts-list" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Run button -->
+      <button id="explorer-run-btn" onclick="runExplorer()"
+        class="hidden px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition">
+        Generate Explorer
+      </button>
+    </div>
+
+    <!-- Output -->
+    <div id="explorer-output" class="hidden"></div>
   </main>
 
   <!-- Modal: Competency Info Overlay -->
