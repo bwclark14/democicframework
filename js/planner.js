@@ -83,7 +83,7 @@ export function renderPlannerGrid() {
   const key = `${conceptTitle}_${organiserName}_L${state.currentPlannerLevel}`;
   if (!state.currentPlannerData.mappings[key]) {
     state.currentPlannerData.mappings[key] = {
-      groups: [{ sequence: 1, name: '', knowItems: [''], doItems: [''], competencyId: '' }],
+      groups: [{ sequence: 1, name: '', knowItems: [''], doItems: [''], competencyId: '', sequenceTag: 1 }],
     };
   }
 
@@ -137,6 +137,17 @@ function createPlannerGroupEl(key, index, group) {
         <input type="text" oninput="updatePlannerValue('${key}', ${index}, 'name', this.value)"
           class="w-full text-xs font-bold border border-slate-200 bg-white rounded-lg px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           placeholder="e.g. Core Fundamentals" value="${escapeHtml(group.name || '')}">
+      </div>
+      <div class="space-y-1">
+        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Sequence Tag</label>
+        <div class="flex gap-2">
+          ${[1, 2, 3].map((n) => `
+            <button type="button"
+              onclick="updatePlannerValue('${key}', ${index}, 'sequenceTag', ${n}); this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('bg-indigo-600','text-white','border-indigo-600')); this.classList.add('bg-indigo-600','text-white','border-indigo-600')"
+              class="flex-1 text-xs font-bold border rounded-lg py-1.5 transition ${(group.sequenceTag ?? 1) === n ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}">
+              ${n}
+            </button>`).join('')}
+        </div>
       </div>
       <div class="space-y-1">
         <label class="text-[9px] font-bold text-violet-600 uppercase tracking-wide">Aligned Competency</label>
@@ -255,6 +266,7 @@ window.addPlannerGroup = (key) => {
     knowItems:   [''],
     doItems:     [''],
     competencyId: '',
+    sequenceTag:  1,
   });
   renderPlannerGrid();
   savePlannerState();
