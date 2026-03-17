@@ -217,13 +217,66 @@ window.saveArea = async () => {
   const colRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'curriculumAreas');
 
   try {
-    if (id) await setDoc(doc(colRef, id), data, { merge: true });
-    else     await addDoc(colRef, data);
+    if (id) {
+      // Rename planning map keys if concept titles or organiser names changed
+      const oldArea = state.curriculumData.find((a) => a.id === id);
+      if (oldArea) {
+        await renamePlanningMapKeys(id, oldArea, { concepts, organisers });
+      }
+      await setDoc(doc(colRef, id), data, { merge: true });
+    } else {
+      await addDoc(colRef, data);
+    }
     window.closeAreaModal();
   } catch (e) {
     console.error(e);
   }
 };
+
+/**
+ * When concepts or organisers are renamed, migrate all planning map keys
+ * that reference the old names so Know and Do bundles are not orphaned.
+ */
+async function renamePlanningMapKeys(areaId, oldArea, newData) {
+  const planDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'planningMaps', areaId);
+  const existing   = state.allPlanningData[areaId];
+  if (!existing?.mappings) return;
+
+  const oldMappings = existing.mappings;
+  const newMappings = {};
+
+  // Build lookup maps: old title/name → new title/name (matched by position)
+  const conceptRenames   = {};
+  const organiserRenames = {};
+  (oldArea.concepts   || []).forEach((c, i) => {
+    const newTitle = newData.concepts[i]?.title;
+    if (newTitle) conceptRenames[c.title] = newTitle;
+  });
+  (oldArea.organisers || []).forEach((o, i) => {
+    const newName = newData.organisers[i]?.name;
+    if (newName) organiserRenames[o.name] = newName;
+  });
+
+  // Re-key every mapping entry
+  for (const [key, value] of Object.entries(oldMappings)) {
+    // Key format: "{conceptTitle}_{organiserName}_L{level}"
+    const match = key.match(/^(.+)_(.+)_(L\d)$/);
+    if (!match) { newMappings[key] = value; continue; }
+
+    const [, oldConcept, oldOrg, level] = match;
+    const newConcept   = conceptRenames[oldConcept]   ?? oldConcept;
+    const newOrg       = organiserRenames[oldOrg]     ?? oldOrg;
+    const newKey       = `${newConcept}_${newOrg}_${level}`;
+    newMappings[newKey] = value;
+  }
+
+  try {
+    await setDoc(planDocRef, { mappings: newMappings });
+    state.allPlanningData[areaId] = { mappings: newMappings };
+  } catch (e) {
+    console.error('Failed to migrate planning map keys:', e);
+  }
+}
 
 window.deleteArea = async (id) => {
   if (!state.user) return;
