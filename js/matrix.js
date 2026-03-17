@@ -140,3 +140,7 @@ export function renderMatrix() {
   container.innerHTML = html + '</tbody></table>';
   triggerMath();
 }
+
+// ── Expose to window for inline onchange handlers in index.html ───────────────
+window.updateMatrixFilters = updateMatrixFilters;
+window.renderMatrix        = renderMatrix;
