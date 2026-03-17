@@ -11,7 +11,7 @@ import { doc, setDoc, onSnapshot }
 
 let autoSaveTimeout = null;
 
-// ── Level tab switching ───────────────────────────────────────────────────────
+// â”€â”€ Level tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 window.switchPlannerLevel = (level) => {
   state.currentPlannerLevel = level;
@@ -22,7 +22,7 @@ window.switchPlannerLevel = (level) => {
   renderPlannerGrid();
 };
 
-// ── Area selection ────────────────────────────────────────────────────────────
+// â”€â”€ Area selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 window.loadPlannerData = async () => {
   const areaId = document.getElementById('planner-area-select').value;
@@ -56,7 +56,7 @@ window.loadPlannerData = async () => {
   });
 };
 
-// ── Grid renderer ─────────────────────────────────────────────────────────────
+// â”€â”€ Grid renderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function renderPlannerGrid() {
   const areaId       = document.getElementById('planner-area-select').value;
@@ -111,7 +111,7 @@ export function renderPlannerGrid() {
   triggerMath();
 }
 
-// ── Bundle card builder ───────────────────────────────────────────────────────
+// â”€â”€ Bundle card builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function createPlannerGroupEl(key, index, group) {
   const safeId = getSafeId(key, index);
@@ -180,7 +180,7 @@ function createPlannerGroupEl(key, index, group) {
   return div;
 }
 
-// ── Statement input builder ───────────────────────────────────────────────────
+// â”€â”€ Statement input builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function createItemInput(key, bundleIndex, listType, itemIndex, value) {
   const safeId    = getSafeId(key, bundleIndex);
@@ -202,7 +202,7 @@ function createItemInput(key, bundleIndex, listType, itemIndex, value) {
   return div;
 }
 
-// ── Planner mutation helpers (exposed to window for inline handlers) ───────────
+// â”€â”€ Planner mutation helpers (exposed to window for inline handlers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 window.cleanupEmptyItems = (key, bundleIndex, listType) => {
   if (!state.currentPlannerData.mappings[key]) return;
@@ -267,7 +267,7 @@ window.removePlannerGroup = (key, index) => {
   savePlannerState();
 };
 
-// ── Persistence ───────────────────────────────────────────────────────────────
+// â”€â”€ Persistence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function savePlannerState() {
   const areaId = document.getElementById('planner-area-select').value;
@@ -275,6 +275,9 @@ async function savePlannerState() {
   const planDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'planningMaps', areaId);
   try {
     await setDoc(planDocRef, state.currentPlannerData, { merge: true });
+    // Keep allPlanningData in sync immediately so the matrix and overview
+    // reflect changes without waiting for the collection snapshot round-trip.
+    state.allPlanningData[areaId] = state.currentPlannerData;
   } catch (e) {
     console.error(e);
   }
