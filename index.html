@@ -304,6 +304,45 @@
     <div id="explorer-output" class="hidden"></div>
   </main>
 
+  <!-- Modal: Bundle Link Picker -->
+  <div id="link-bundle-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+      <div class="p-5 border-b flex justify-between items-center bg-teal-50 rounded-t-2xl">
+        <div>
+          <h3 class="text-base font-bold text-teal-800">Link an Existing Bundle</h3>
+          <p class="text-xs text-teal-600 mt-0.5">Browse another area to reuse one of its bundles at this level.</p>
+        </div>
+        <button onclick="closeLinkBundleModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+        <div>
+          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Curriculum Area</label>
+          <select id="link-area-select" onchange="linkPickerAreaChanged()"
+            class="w-full rounded-lg border-slate-200 bg-slate-50 p-2 border text-sm">
+            <option value="">Choose an area…</option>
+          </select>
+        </div>
+        <div id="link-concept-row" class="hidden">
+          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Concept</label>
+          <select id="link-concept-select" onchange="linkPickerConceptChanged()"
+            class="w-full rounded-lg border-slate-200 bg-slate-50 p-2 border text-sm"></select>
+        </div>
+        <div id="link-organiser-row" class="hidden">
+          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Organiser</label>
+          <select id="link-organiser-select" onchange="linkPickerOrganiserChanged()"
+            class="w-full rounded-lg border-slate-200 bg-slate-50 p-2 border text-sm"></select>
+        </div>
+        <div id="link-bundles-row" class="hidden">
+          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Available Bundles</label>
+          <div id="link-bundles-list" class="space-y-2"></div>
+        </div>
+        <p id="link-empty-msg" class="hidden text-sm text-slate-400 italic text-center py-4">No bundles found for this combination.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Competency Info Overlay -->
   <div id="comp-info-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
