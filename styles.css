@@ -1,3 +1,533 @@
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CURRICULUM DESIGNER — Design System
+   Palette: near-black navy (#0f172a) + cool slate surfaces + teal accent (#0d9488)
+   Type: DM Sans (UI) + DM Mono (labels/ids)
+   Aesthetic: refined editorial — crisp, functional, quietly confident
+═══════════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+
+/* ── CSS custom properties ───────────────────────────────────────────────── */
+:root {
+  --color-bg:          #f8fafc;
+  --color-surface:     #ffffff;
+  --color-surface-2:   #f1f5f9;
+  --color-surface-3:   #e9eef5;
+  --color-border:      #e2e8f0;
+  --color-border-med:  #cbd5e1;
+
+  --color-ink:         #0f172a;
+  --color-ink-2:       #334155;
+  --color-ink-3:       #64748b;
+  --color-ink-4:       #94a3b8;
+
+  --color-accent:      #0d9488;   /* teal-600  */
+  --color-accent-2:    #0f766e;   /* teal-700  */
+  --color-accent-bg:   #f0fdfa;   /* teal-50   */
+  --color-accent-mid:  #99f6e4;   /* teal-200  */
+
+  --color-indigo:      #4f46e5;
+  --color-indigo-bg:   #eef2ff;
+  --color-violet:      #7c3aed;
+  --color-violet-bg:   #f5f3ff;
+  --color-amber:       #d97706;
+  --color-amber-bg:    #fffbeb;
+  --color-emerald:     #059669;
+  --color-emerald-bg:  #ecfdf5;
+  --color-red:         #dc2626;
+
+  --shadow-xs:  0 1px 2px rgba(15,23,42,0.06);
+  --shadow-sm:  0 1px 4px rgba(15,23,42,0.08), 0 0 0 1px rgba(15,23,42,0.04);
+  --shadow-md:  0 4px 12px rgba(15,23,42,0.10), 0 0 0 1px rgba(15,23,42,0.04);
+  --shadow-lg:  0 12px 32px rgba(15,23,42,0.14), 0 0 0 1px rgba(15,23,42,0.06);
+  --shadow-xl:  0 24px 48px rgba(15,23,42,0.18), 0 0 0 1px rgba(15,23,42,0.06);
+
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  18px;
+
+  --font-ui:    'DM Sans', system-ui, sans-serif;
+  --font-mono:  'DM Mono', monospace;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  min-height: 100vh;
+}
+
+/* Override Tailwind's default font-sans */
+.font-sans { font-family: var(--font-ui) !important; }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar        { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track  { background: var(--color-surface-2); }
+.custom-scrollbar::-webkit-scrollbar-thumb  { background: var(--color-border-med); border-radius: 99px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--color-ink-4); }
+
+/* ── Loading overlay ─────────────────────────────────────────────────────── */
+#loading-overlay {
+  background: var(--color-surface);
+}
+#loading-overlay .animate-spin {
+  border-color: var(--color-border);
+  border-bottom-color: var(--color-accent);
+}
+#loading-overlay p {
+  font-family: var(--font-ui);
+  color: var(--color-ink-3);
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+header {
+  background: var(--color-surface) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-xs);
+  height: 60px;
+}
+
+/* Logo mark */
+header .bg-indigo-600 {
+  background: var(--color-ink) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 7px !important;
+}
+
+/* App title */
+header h1 {
+  font-family: var(--font-ui);
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em;
+  color: var(--color-ink) !important;
+}
+
+/* Nav pill container */
+header nav {
+  background: var(--color-surface-2) !important;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md) !important;
+  padding: 3px !important;
+  gap: 2px !important;
+}
+
+/* Nav buttons — inactive */
+header nav button {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  color: var(--color-ink-3) !important;
+  border-radius: 7px !important;
+  padding: 5px 12px !important;
+  transition: color 0.15s, background 0.15s !important;
+  letter-spacing: 0.005em;
+}
+header nav button:hover {
+  color: var(--color-ink-2) !important;
+  background: rgba(15,23,42,0.04) !important;
+}
+
+/* Nav buttons — active */
+header nav button.bg-white,
+header nav button.text-indigo-600 {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-weight: 600 !important;
+  box-shadow: var(--shadow-xs) !important;
+}
+
+/* Divider in nav */
+header nav .bg-slate-300 {
+  background: var(--color-border-med) !important;
+}
+
+/* User ID chip */
+#user-display-id {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem !important;
+  background: var(--color-surface-2) !important;
+  border: 1px solid var(--color-border);
+  color: var(--color-ink-4) !important;
+  border-radius: 99px;
+  padding: 3px 10px !important;
+  letter-spacing: 0.02em;
+}
+
+/* ── View transitions ─────────────────────────────────────────────────────── */
+.view-transition { transition: opacity 0.18s ease; }
+
+/* ── Page headings ───────────────────────────────────────────────────────── */
+main h2.text-2xl {
+  font-size: 1.375rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em;
+  color: var(--color-ink) !important;
+}
+main h2 + p,
+main .text-slate-500 {
+  color: var(--color-ink-3) !important;
+  font-size: 0.875rem !important;
+}
+
+/* ── Primary action buttons ──────────────────────────────────────────────── */
+button.bg-indigo-600,
+button.bg-indigo-600:not(header nav *) {
+  background: var(--color-ink) !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  letter-spacing: -0.01em;
+  box-shadow: var(--shadow-xs) !important;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s !important;
+}
+button.bg-indigo-600:hover {
+  background: #1e293b !important;
+  box-shadow: var(--shadow-sm) !important;
+  transform: translateY(-1px);
+}
+
+button.bg-violet-600 {
+  background: var(--color-violet) !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 600 !important;
+  box-shadow: var(--shadow-xs) !important;
+  transition: background 0.15s, transform 0.1s !important;
+}
+button.bg-violet-600:hover {
+  background: #6d28d9 !important;
+  transform: translateY(-1px);
+}
+
+/* ── Surface panels (filter bars, info cards) ─────────────────────────────── */
+.bg-white.border.rounded-xl,
+.bg-white.border.rounded-xl.shadow-sm {
+  border-color: var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* ── Form labels ─────────────────────────────────────────────────────────── */
+.text-sm.font-bold.text-slate-700.uppercase,
+span.text-sm.font-bold.text-slate-700.uppercase {
+  font-size: 0.6875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.07em;
+  color: var(--color-ink-3) !important;
+}
+
+/* ── Inputs & selects ────────────────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+textarea,
+select {
+  font-family: var(--font-ui) !important;
+  border-color: var(--color-border) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-size: 0.875rem !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+input[type="text"]:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.12) !important;
+}
+
+/* ── Curriculum area cards ───────────────────────────────────────────────── */
+.card {
+  border-radius: var(--radius-lg) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: var(--shadow-xs) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+.card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Status badges on cards */
+.card .absolute.bg-amber-500  { background: var(--color-amber)   !important; border-radius: 0 var(--radius-lg) 0 var(--radius-sm) !important; }
+.card .absolute.bg-emerald-500 { background: var(--color-accent)  !important; border-radius: 0 var(--radius-lg) 0 var(--radius-sm) !important; font-size: 0.6rem !important; letter-spacing: 0.08em; }
+
+/* Stat chips inside cards */
+.card .bg-indigo-50 { background: var(--color-indigo-bg) !important; border-radius: var(--radius-sm) !important; }
+.card .bg-emerald-50 { background: var(--color-emerald-bg) !important; border-radius: var(--radius-sm) !important; }
+.card .text-indigo-700 { color: var(--color-indigo) !important; }
+.card .text-emerald-700 { color: var(--color-emerald) !important; }
+
+/* Competency cards */
+.card.border-l-4.border-l-violet-500 {
+  border-left-color: var(--color-violet) !important;
+  border-left-width: 3px !important;
+}
+
+/* ── Collapsible panels ──────────────────────────────────────────────────── */
+.collapse-content {
+  transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+.collapse-content.expanded { max-height: 4000px; opacity: 1; }
+
+.rotate-icon { transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); }
+.rotate-icon.expanded { transform: rotate(180deg); }
+
+/* ── Level tabs ──────────────────────────────────────────────────────────── */
+.level-tab {
+  font-family: var(--font-ui);
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-3) !important;
+  transition: color 0.15s, background 0.15s, border-color 0.15s !important;
+  border-bottom: 2px solid transparent;
+}
+.level-tab:hover { color: var(--color-accent) !important; }
+.level-tab.active {
+  border-bottom: 2px solid var(--color-accent) !important;
+  color: var(--color-accent) !important;
+  background: var(--color-accent-bg) !important;
+}
+
+/* ── Mode toggles (planner cards/grid, matrix conceptual/knowdo) ─────────── */
+.mode-toggle {
+  font-family: var(--font-ui);
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  color: var(--color-ink-3);
+  border-radius: var(--radius-sm) !important;
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s !important;
+  letter-spacing: 0.01em;
+}
+.mode-toggle:hover { color: var(--color-ink-2); }
+.mode-toggle.active-mode {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-weight: 600 !important;
+  box-shadow: var(--shadow-xs) !important;
+}
+
+/* ── Planner concept header ──────────────────────────────────────────────── */
+#planner-concept-header {
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%) !important;
+  border-color: #b2e6df !important;
+  border-radius: var(--radius-lg) !important;
+}
+#planner-header-title { color: #0f4c45 !important; }
+#planner-header-desc  { color: #1e6e64 !important; }
+
+/* Level context bar */
+#planner-level-context {
+  border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* ── Bundle cards (planner card view) ─────────────────────────────────────── */
+.bg-white.border.border-slate-200.rounded-xl.shadow-sm.overflow-hidden.flex.flex-col {
+  border-color: var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-xs) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+.bg-white.border.border-slate-200.rounded-xl.shadow-sm.overflow-hidden.flex.flex-col:hover {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Bundle card header */
+.bg-white.border.border-slate-200.rounded-xl.shadow-sm.overflow-hidden.flex.flex-col > div:first-child {
+  background: var(--color-surface-2) !important;
+  border-bottom-color: var(--color-border) !important;
+}
+
+/* ── Bundle display cards (matrix/explorer) ──────────────────────────────── */
+.bundle-card {
+  border-color: var(--color-border) !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden;
+}
+.bundle-card > button {
+  background: var(--color-surface-2) !important;
+  transition: background 0.15s !important;
+}
+.bundle-card > button:hover { background: var(--color-surface-3) !important; }
+.bundle-card .bundle-body  { background: var(--color-surface) !important; }
+
+/* ── Math preview ────────────────────────────────────────────────────────── */
+.math-preview {
+  min-height: 1rem;
+  border-top: 1px dashed var(--color-border);
+  margin-top: 0.2rem;
+  padding-top: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--color-ink-3);
+}
+
+/* ── Modals ──────────────────────────────────────────────────────────────── */
+[id$="-modal"] > div,
+#comp-info-overlay > div {
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-xl) !important;
+  border: 1px solid var(--color-border);
+}
+
+/* Modal headers */
+[id$="-modal"] > div > div:first-child {
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  background: var(--color-surface-2) !important;
+  padding: 18px 24px !important;
+}
+[id$="-modal"] > div > div:first-child h3 {
+  font-size: 1.0625rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  color: var(--color-ink) !important;
+}
+
+/* Competency modal header — keep a subtle violet tint */
+#competency-modal > div > div:first-child {
+  background: var(--color-violet-bg) !important;
+}
+#competency-modal > div > div:first-child h3 {
+  color: var(--color-violet) !important;
+}
+
+/* Comp info overlay header */
+#comp-info-overlay > div > div:first-child {
+  background: var(--color-violet-bg) !important;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+}
+
+/* Modal footers */
+[id$="-modal"] > div > div:last-child,
+#comp-info-overlay > div > div:last-child {
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl) !important;
+  background: var(--color-surface-2) !important;
+  border-top: 1px solid var(--color-border) !important;
+}
+
+/* Cancel / close text buttons */
+button.text-slate-600.font-medium,
+button.px-4.py-2.text-slate-600 {
+  color: var(--color-ink-3) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: color 0.15s !important;
+}
+button.text-slate-600.font-medium:hover { color: var(--color-ink) !important; }
+
+/* ── Planner grid-view table ──────────────────────────────────────────────── */
+table.w-full.text-left.table-fixed {
+  border-collapse: collapse;
+}
+table.w-full.text-left.table-fixed th {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-3) !important;
+  background: var(--color-surface-2) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+table.w-full.text-left.table-fixed td {
+  border-color: var(--color-border) !important;
+  vertical-align: top;
+}
+
+/* ── Explorer concept label ───────────────────────────────────────────────── */
+#explorer-concepts-list label {
+  border-color: var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  transition: border-color 0.15s, background 0.15s !important;
+}
+#explorer-concepts-list label:hover {
+  border-color: var(--color-accent) !important;
+  background: var(--color-accent-bg) !important;
+}
+#explorer-concepts-list input[type="checkbox"]:checked + span {
+  color: var(--color-accent) !important;
+  font-weight: 600;
+}
+
+/* ── Overview rationale block ─────────────────────────────────────────────── */
+.bg-indigo-50\/50 {
+  background: var(--color-accent-bg) !important;
+  border-color: #b2e6df !important;
+}
+
+/* ── Section labels (tiny uppercase trackers) ─────────────────────────────── */
+.text-\[10px\].font-black,
+.text-\[9px\].font-black,
+.text-\[8px\].font-black,
+.text-\[10px\].font-bold {
+  font-family: var(--font-mono) !important;
+  letter-spacing: 0.08em;
+}
+
+/* ── Sequence tag badges ──────────────────────────────────────────────────── */
+.bg-indigo-100.text-indigo-700  { background: #e0e7ff !important; color: #4338ca !important; }
+.bg-amber-100.text-amber-700    { background: #fef3c7 !important; color: #b45309 !important; }
+.bg-emerald-100.text-emerald-700{ background: #d1fae5 !important; color: #065f46 !important; }
+
+/* ── Print ────────────────────────────────────────────────────────────────── */
+@media print {
+  .no-print   { display: none !important; }
+  .print-only { display: block !important; }
+  body        { background: white; font-family: var(--font-ui); }
+  header      { display: none !important; }
+}
+
+/* ── Micro-interactions ───────────────────────────────────────────────────── */
+button:active { transform: scale(0.98); }
+
+/* Icon buttons (edit/delete) */
+button.text-indigo-600.p-1\.5,
+button.text-violet-600.p-1\.5,
+button.text-red-600.p-1\.5 {
+  border-radius: var(--radius-sm) !important;
+  transition: background 0.15s, color 0.15s !important;
+}
+button.text-indigo-600.p-1\.5:hover { background: var(--color-indigo-bg) !important; }
+button.text-violet-600.p-1\.5:hover { background: var(--color-violet-bg) !important; }
+button.text-red-600.p-1\.5:hover    { background: #fef2f2 !important; }
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+#empty-state h3 { color: var(--color-ink-2) !important; font-weight: 600 !important; }
+#empty-state p  { color: var(--color-ink-3) !important; }
+
+/* ── Dashed add-bundle button ─────────────────────────────────────────────── */
+.border-dashed.border-slate-300 {
+  border-color: var(--color-border-med) !important;
+  border-radius: var(--radius-lg) !important;
+  transition: border-color 0.2s, background 0.2s !important;
+}
+.border-dashed.border-slate-300:hover {
+  border-color: var(--color-accent) !important;
+  background: var(--color-accent-bg) !important;
+}
+.border-dashed.border-slate-300:hover .text-indigo-500 { color: var(--color-accent) !important; }
+.border-dashed.border-slate-300:hover .text-slate-500  { color: var(--color-accent) !important; }
+
+
+
+
+/*
+
 /* ── Scrollbar ─────────────────────────────────────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar        { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track  { background: #f1f1f1; }
@@ -53,3 +583,4 @@
   color: #4f46e5;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+*/
