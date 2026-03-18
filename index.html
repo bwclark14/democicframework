@@ -171,14 +171,15 @@
         <p id="planner-header-desc" class="text-sm text-indigo-700 leading-relaxed"></p>
       </div>
       <div class="flex border-b border-slate-200 bg-white rounded-t-xl overflow-hidden">
-        <button onclick="switchPlannerLevel(1)" id="tab-l1" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition active"><span class="hidden sm:inline">LEVEL </span>1</button>
-        <button onclick="switchPlannerLevel(2)" id="tab-l2" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">LEVEL </span>2</button>
-        <button onclick="switchPlannerLevel(3)" id="tab-l3" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">LEVEL </span>3</button>
-        <button onclick="switchPlannerLevel(4)" id="tab-l4" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">LEVEL </span>4</button>
+        <button onclick="switchPlannerLevel(0)" id="tab-l0" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">Early</span><span class="sm:hidden">E</span></button>
+        <button onclick="switchPlannerLevel(1)" id="tab-l1" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition active"><span class="hidden sm:inline">First</span><span class="sm:hidden">1</span></button>
+        <button onclick="switchPlannerLevel(2)" id="tab-l2" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">Second</span><span class="sm:hidden">2</span></button>
+        <button onclick="switchPlannerLevel(3)" id="tab-l3" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">Third</span><span class="sm:hidden">3</span></button>
+        <button onclick="switchPlannerLevel(4)" id="tab-l4" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">Fourth</span><span class="sm:hidden">4</span></button>
       </div>
       <div id="planner-level-context" class="bg-white border-x border-b border-slate-200 p-6 rounded-b-xl shadow-sm mb-6">
         <div class="flex items-center space-x-2 mb-2">
-          <span class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">L<span id="planner-context-level-num">1</span></span>
+          <span class="px-2 h-5 rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center justify-center text-[10px] font-bold whitespace-nowrap"><span id="planner-context-level-num">First</span></span>
           <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Conceptual Level Description</span>
         </div>
         <p id="planner-level-desc" class="text-sm text-slate-800 italic leading-relaxed"></p>
@@ -213,10 +214,11 @@
         <div>
           <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Levels</label>
           <div class="flex flex-wrap gap-3 items-center">
-            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l1" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L1</label>
-            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l2" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L2</label>
-            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l3" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L3</label>
-            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l4" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L4</label>
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l0" onchange="renderMatrix()" class="matrix-level-cb mr-2"> Early</label>
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l1" onchange="renderMatrix()" class="matrix-level-cb mr-2"> First</label>
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l2" onchange="renderMatrix()" class="matrix-level-cb mr-2"> Second</label>
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l3" onchange="renderMatrix()" class="matrix-level-cb mr-2"> Third</label>
+            <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l4" onchange="renderMatrix()" class="matrix-level-cb mr-2"> Fourth</label>
           </div>
         </div>
       </div>
@@ -279,10 +281,11 @@
           <select id="explorer-level-select" onchange="explorerLevelChanged()"
             class="w-full max-w-xs rounded-lg border-slate-300 bg-slate-50 p-2 border focus:ring-indigo-500 focus:border-indigo-500">
             <option value="">Choose a level…</option>
-            <option value="1">Level 1</option>
-            <option value="2">Level 2</option>
-            <option value="3">Level 3</option>
-            <option value="4">Level 4</option>
+            <option value="0">Early</option>
+            <option value="1">First</option>
+            <option value="2">Second</option>
+            <option value="3">Third</option>
+            <option value="4">Fourth</option>
           </select>
         </div>
       </div>
