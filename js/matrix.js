@@ -10,7 +10,7 @@
  * Sequence badge is suppressed when every bundle in a cell is tagged 1.
  */
 
-import { state, escapeHtml, triggerMath } from './state.js';
+import { state, escapeHtml, triggerMath, LEVELS, levelByKey } from './state.js';
 
 // ── Module state ──────────────────────────────────────────────────────────────
 
@@ -227,7 +227,7 @@ function renderConceptualMatrix(ctx) {
           <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-44">Concept</th>
           ${levels.map((l) => `
             <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 last:border-r-0">
-              Level ${l.substring(1)}
+              ${levelByKey(l).label}
             </th>`).join('')}
         </tr>
       </thead>
@@ -235,7 +235,7 @@ function renderConceptualMatrix(ctx) {
 
   concepts.forEach((concept, cIdx) => {
     const collapseId   = `concept-rows-${cIdx}`;
-    const applicable   = new Set(concept.applicableLevels ?? ['l1','l2','l3','l4']);
+    const applicable   = new Set(concept.applicableLevels ?? LEVELS.map(lv=>lv.key));
 
     // ── Concept row: name in col 1, level descriptions in level cols ──────────
     html += `
@@ -272,7 +272,7 @@ function renderConceptualMatrix(ctx) {
             if (!applicable.has(l)) {
               return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 bg-slate-50/30"></td>`;
             }
-            const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
+            const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
             return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0"><div class="space-y-2">${bundleCellHtml(m.groups)}</div></td>`;
           }).join('')}
         </tr>`;
@@ -311,13 +311,13 @@ function renderKnowDoMatrix(ctx) {
       <thead>
         <tr class="bg-slate-100 border-b">
           <th class="p-4 text-xs font-bold text-slate-600 uppercase w-48">Concept${allOrgs ? ' / Organiser' : ''}</th>
-          ${levels.map((l) => `<th class="p-4 text-xs font-bold text-slate-600 uppercase">Level ${l.substring(1)}</th>`).join('')}
+          ${levels.map((l) => `<th class="p-4 text-xs font-bold text-slate-600 uppercase">${levelByKey(l).label}</th>`).join('')}
         </tr>
       </thead>
       <tbody class="divide-y">`;
 
   concepts.forEach((concept) => {
-    const applicable = new Set(concept.applicableLevels ?? ['l1','l2','l3','l4']);
+    const applicable = new Set(concept.applicableLevels ?? LEVELS.map(lv=>lv.key));
 
     if (allOrgs) {
       html += `
@@ -330,7 +330,7 @@ function renderKnowDoMatrix(ctx) {
       orgs.forEach((org) => {
         const hasAny = levels.some((l) => {
           if (!applicable.has(l)) return false;
-          const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
+          const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
           return (m.groups || []).some((g) => hasContent(g));
         });
         if (!hasAny) return;
@@ -340,7 +340,7 @@ function renderKnowDoMatrix(ctx) {
             <td class="p-3 pl-8 align-top border-r bg-slate-50 text-xs font-bold text-slate-600">${escapeHtml(org.name)}</td>
             ${levels.map((l) => {
               if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"></td>`;
-              const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
+              const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
               const bundles = bundleCellHtml(m.groups);
               return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundles || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
             }).join('')}
@@ -351,7 +351,7 @@ function renderKnowDoMatrix(ctx) {
       const org = orgs[0];
       const hasAny = levels.some((l) => {
         if (!applicable.has(l)) return false;
-        const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
+        const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
         return (m.groups || []).some((g) => hasContent(g));
       });
 
@@ -360,7 +360,7 @@ function renderKnowDoMatrix(ctx) {
           <td class="p-4 align-top border-r bg-white font-black text-slate-900 text-sm uppercase">${escapeHtml(concept.title)}</td>
           ${levels.map((l) => {
             if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"><span class="text-[9px] text-slate-300 italic">Not applicable</span></td>`;
-            const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
+            const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
             const bundles = bundleCellHtml(m.groups);
             return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundles || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
           }).join('')}
