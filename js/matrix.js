@@ -154,31 +154,53 @@ function renderConceptualMatrix(ctx) {
     <table class="w-full text-left matrix-table table-fixed">
       <thead>
         <tr class="bg-slate-100 border-b">
-          <th class="p-4 text-xs font-bold text-slate-600 uppercase w-48">Concept / Organiser</th>
+          <th class="p-4 text-xs font-bold text-slate-600 uppercase w-48">Concept</th>
           ${levels.map((l) => `<th class="p-4 text-xs font-bold text-slate-600 uppercase">Level ${l.substring(1)}</th>`).join('')}
         </tr>
       </thead>
-      <tbody class="divide-y">`;
+      <tbody>`;
 
-  area.concepts.forEach((concept) => {
-    // Concept descriptor row
+  area.concepts.forEach((concept, cIdx) => {
+    const collapseId = `concept-rows-${cIdx}`;
+
+    // ── Row 1: concept title + toggle button spanning all columns ──────────
     html += `
-      <tr class="bg-indigo-50/20">
-        <td class="p-4 align-top border-r bg-white font-black text-slate-900 text-sm uppercase">${escapeHtml(concept.title)}</td>
-        ${levels.map((l) => `
-          <td class="p-4 align-top border-r">
-            <div class="p-3 bg-white rounded-lg border text-[11px] text-slate-700 leading-relaxed">${escapeHtml(concept.levels[l]) || 'N/A'}</div>
-          </td>`).join('')}
+      <tr class="bg-indigo-50/30 border-t-2 border-indigo-100">
+        <td colspan="${levels.length + 1}" class="px-4 py-2">
+          <button
+            onclick="toggleConceptRows('${collapseId}', this)"
+            class="flex items-center gap-2 w-full text-left group">
+            <svg class="w-4 h-4 text-indigo-400 rotate-icon expanded shrink-0 transition-transform"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+            <span class="font-black text-slate-900 text-sm uppercase tracking-tight">${escapeHtml(concept.title)}</span>
+          </button>
+        </td>
       </tr>`;
 
-    // Organiser sub-rows
+    // ── Row 2: full-width level descriptions ────────────────────────────────
+    html += `
+      <tr class="concept-collapsible-row" data-collapse-id="${collapseId}">
+        <td class="p-0 border-b border-slate-100" colspan="${levels.length + 1}">
+          <div class="grid border-b border-slate-100" style="grid-template-columns: repeat(${levels.length}, minmax(0, 1fr))">
+            ${levels.map((l) => `
+              <div class="p-4 border-r border-slate-100 last:border-r-0">
+                <div class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Level ${l.substring(1)}</div>
+                <p class="text-xs text-slate-700 leading-relaxed">${escapeHtml(concept.levels[l]) || '<span class="text-slate-300 italic">No statement defined</span>'}</p>
+              </div>`).join('')}
+          </div>
+        </td>
+      </tr>`;
+
+    // ── Rows 3+: one row per organiser ──────────────────────────────────────
     orgs.forEach((org) => {
       html += `
-        <tr>
-          <td class="p-4 py-3 border-r pl-8 bg-slate-50 font-bold text-slate-700 text-xs">${escapeHtml(org.name)}</td>
+        <tr class="concept-collapsible-row border-t border-slate-100 hover:bg-slate-50/50" data-collapse-id="${collapseId}">
+          <td class="p-3 pl-8 align-top border-r border-slate-100 bg-slate-50 font-bold text-slate-600 text-xs w-48">${escapeHtml(org.name)}</td>
           ${levels.map((l) => {
             const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
-            return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups)}</div></td>`;
+            return `<td class="p-3 align-top border-r border-slate-100"><div class="space-y-2">${bundleCellHtml(m.groups)}</div></td>`;
           }).join('')}
         </tr>`;
     });
@@ -186,6 +208,16 @@ function renderConceptualMatrix(ctx) {
 
   container.innerHTML = html + '</tbody></table>';
 }
+
+window.toggleConceptRows = (collapseId, btn) => {
+  const rows = document.querySelectorAll(`.concept-collapsible-row[data-collapse-id="${collapseId}"]`);
+  const icon = btn.querySelector('.rotate-icon');
+  const isExpanded = icon.classList.contains('expanded');
+  rows.forEach((r) => {
+    r.style.display = isExpanded ? 'none' : '';
+  });
+  icon.classList.toggle('expanded', !isExpanded);
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // KNOW & DO VIEW
