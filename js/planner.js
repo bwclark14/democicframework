@@ -45,7 +45,32 @@ window.setPlannerViewMode = (mode) => {
 
 // ── Area selection ────────────────────────────────────────────────────────────
 
-let _plannerUnsubscribe = null; // holds the current onSnapshot unsubscribe fn
+let _plannerUnsubscribe    = null; // holds the current onSnapshot unsubscribe fn
+let organiserFilterEnabled = false; // whether the organiser-specific section is active
+
+window.toggleOrganiserFilter = () => {
+  organiserFilterEnabled = !organiserFilterEnabled;
+
+  // Update toggle button appearance
+  const btn   = document.getElementById('planner-organiser-toggle-btn');
+  const knob  = document.getElementById('planner-organiser-toggle-knob');
+  const oBox  = document.getElementById('planner-organiser-container');
+
+  btn.setAttribute('aria-checked', organiserFilterEnabled ? 'true' : 'false');
+  btn.style.backgroundColor = organiserFilterEnabled ? 'var(--color-accent, #0d9488)' : '';
+  btn.classList.toggle('bg-teal-500', organiserFilterEnabled);
+  btn.classList.toggle('bg-slate-200', !organiserFilterEnabled);
+  knob.classList.toggle('translate-x-5', organiserFilterEnabled);
+  knob.classList.toggle('translate-x-0.5', !organiserFilterEnabled);
+
+  if (organiserFilterEnabled) {
+    oBox.classList.remove('hidden');
+  } else {
+    oBox.classList.add('hidden');
+  }
+
+  renderPlannerGrid();
+};
 
 window.loadPlannerData = async () => {
   const areaId = document.getElementById('planner-area-select').value;
@@ -56,6 +81,7 @@ window.loadPlannerData = async () => {
   if (!areaId) {
     state.currentPlannerData = null;
     document.getElementById('planner-concept-container').classList.add('hidden');
+    document.getElementById('planner-organiser-toggle-row').classList.add('hidden');
     document.getElementById('planner-organiser-container').classList.add('hidden');
     document.getElementById('planner-grid-container').classList.add('hidden');
     return;
@@ -64,7 +90,7 @@ window.loadPlannerData = async () => {
   const area = state.curriculumData.find((a) => a.id === areaId);
   if (!area) return;
 
-  // Preserve current selections across re-loads (e.g. when navigating back)
+  // Preserve current concept selection across re-loads
   const prevConcept   = document.getElementById('planner-concept-select').value;
   const prevOrganiser = document.getElementById('planner-organiser-select').value;
 
@@ -84,7 +110,7 @@ window.loadPlannerData = async () => {
   }
 
   document.getElementById('planner-concept-container').classList.remove('hidden');
-  document.getElementById('planner-organiser-container').classList.remove('hidden');
+  document.getElementById('planner-organiser-toggle-row').classList.remove('hidden');
   document.getElementById('planner-grid-container').classList.remove('hidden');
 
   // Seed currentPlannerData immediately from allPlanningData so renderPlannerGrid
@@ -102,17 +128,20 @@ window.loadPlannerData = async () => {
 // ── Main renderer — dispatches to card or grid mode ───────────────────────────
 
 export function renderPlannerGrid() {
-  const areaId        = document.getElementById('planner-area-select').value;
-  const conceptTitle  = document.getElementById('planner-concept-select').value;
-  const organiserName = document.getElementById('planner-organiser-select').value;
+  const areaId       = document.getElementById('planner-area-select').value;
+  const conceptTitle = document.getElementById('planner-concept-select').value;
 
-  if (!areaId || !conceptTitle || !organiserName || !state.currentPlannerData) return;
+  if (!areaId || !conceptTitle || !state.currentPlannerData) return;
 
   const area = state.curriculumData.find((a) => a.id === areaId);
   if (!area) return;
 
-  const concept = area.concepts.find((c) => c.title === conceptTitle);
-  const applicable = new Set(concept?.applicableLevels ?? LEVELS.map(lv=>lv.key));
+  const organiserName = organiserFilterEnabled
+    ? document.getElementById('planner-organiser-select').value
+    : null;
+
+  const concept    = area.concepts.find((c) => c.title === conceptTitle);
+  const applicable = new Set(concept?.applicableLevels ?? LEVELS.map(lv => lv.key));
 
   // Update level tabs — dim non-applicable ones
   LEVELS.forEach((lv) => {
@@ -127,8 +156,8 @@ export function renderPlannerGrid() {
   // If current level is not applicable, switch to first applicable
   if (!applicable.has(`l${state.currentPlannerLevel}`)) {
     const firstLv = LEVELS.find((lv) => applicable.has(lv.key));
-    const first = firstLv?.plannerNum;
-    if (first) {
+    const first   = firstLv?.plannerNum;
+    if (first !== undefined) {
       state.currentPlannerLevel = first;
       document.querySelectorAll('.level-tab').forEach((t) => t.classList.remove('active'));
       document.getElementById(`tab-l${first}`)?.classList.add('active');
@@ -146,7 +175,7 @@ export function renderPlannerGrid() {
   const container = document.getElementById('planner-active-level-view');
   container.innerHTML = '';
 
-  // If level not applicable, show a clear notice instead of the bundle editor
+  // If level not applicable, show notice
   if (!applicable.has(`l${state.currentPlannerLevel}`)) {
     container.innerHTML = `
       <div class="flex flex-col items-center justify-center py-16 text-center gap-3">
@@ -159,28 +188,23 @@ export function renderPlannerGrid() {
     return;
   }
 
-  const levelNum    = state.currentPlannerLevel;
-  const commonKey   = `${conceptTitle}_ALL_L${levelNum}`;
-  const specificKey = `${conceptTitle}_${organiserName}_L${levelNum}`;
+  const levelNum  = state.currentPlannerLevel;
+  const commonKey = `${conceptTitle}_ALL_L${levelNum}`;
 
-  // Initialise mappings if they don't exist yet (empty — user adds bundles explicitly)
   if (!state.currentPlannerData.mappings[commonKey]) {
     state.currentPlannerData.mappings[commonKey] = { groups: [] };
   }
-  if (!state.currentPlannerData.mappings[specificKey]) {
-    state.currentPlannerData.mappings[specificKey] = { groups: [] };
-  }
 
-  // ── Section 1: Common bundles (apply to all organisers) ────────────────────
+  // ── Section 1: Common bundles ──────────────────────────────────────────────
   const commonSection = document.createElement('div');
   commonSection.className = 'space-y-4';
   commonSection.innerHTML = `
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 flex-wrap">
       <div class="flex items-center gap-2 px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg">
         <svg class="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         <span class="text-xs font-black text-teal-700 uppercase tracking-wide">Common — applies to all organisers</span>
       </div>
-      <span class="text-xs text-slate-400">These bundles will appear in every organiser's matrix cells.</span>
+      <span class="text-xs text-slate-400">These bundles appear in every organiser's matrix cells.</span>
     </div>`;
   const commonContainer = document.createElement('div');
   if (currentViewMode === 'grid') {
@@ -189,31 +213,35 @@ export function renderPlannerGrid() {
     renderCardMode(commonKey, commonContainer);
   }
   commonSection.appendChild(commonContainer);
-
-  // ── Divider ────────────────────────────────────────────────────────────────
-  const divider = document.createElement('div');
-  divider.className = 'flex items-center gap-3 py-2';
-  divider.innerHTML = `
-    <div class="flex-1 border-t border-slate-200"></div>
-    <div class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg shrink-0">
-      <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-      <span class="text-xs font-black text-indigo-700 uppercase tracking-wide">Specific to: ${escapeHtml(organiserName)}</span>
-    </div>
-    <div class="flex-1 border-t border-slate-200"></div>`;
-
-  // ── Section 2: Organiser-specific bundles ──────────────────────────────────
-  const specificSection = document.createElement('div');
-  const specificContainer = document.createElement('div');
-  if (currentViewMode === 'grid') {
-    renderGridMode(specificKey, specificContainer);
-  } else {
-    renderCardMode(specificKey, specificContainer);
-  }
-  specificSection.appendChild(specificContainer);
-
   container.appendChild(commonSection);
-  container.appendChild(divider);
-  container.appendChild(specificSection);
+
+  // ── Section 2: Organiser-specific (only when toggle is on) ─────────────────
+  if (organiserFilterEnabled && organiserName) {
+    const specificKey = `${conceptTitle}_${organiserName}_L${levelNum}`;
+    if (!state.currentPlannerData.mappings[specificKey]) {
+      state.currentPlannerData.mappings[specificKey] = { groups: [] };
+    }
+
+    const divider = document.createElement('div');
+    divider.className = 'flex items-center gap-3 py-2';
+    divider.innerHTML = `
+      <div class="flex-1 border-t border-slate-200"></div>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg shrink-0">
+        <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+        <span class="text-xs font-black text-indigo-700 uppercase tracking-wide">Specific to: ${escapeHtml(organiserName)}</span>
+      </div>
+      <div class="flex-1 border-t border-slate-200"></div>`;
+
+    const specificContainer = document.createElement('div');
+    if (currentViewMode === 'grid') {
+      renderGridMode(specificKey, specificContainer);
+    } else {
+      renderCardMode(specificKey, specificContainer);
+    }
+
+    container.appendChild(divider);
+    container.appendChild(specificContainer);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
