@@ -137,18 +137,63 @@ export function renderPlannerGrid() {
     return;
   }
 
-  const key = `${conceptTitle}_${organiserName}_L${state.currentPlannerLevel}`;
-  if (!state.currentPlannerData.mappings[key]) {
-    state.currentPlannerData.mappings[key] = {
+  const levelNum    = state.currentPlannerLevel;
+  const commonKey   = `${conceptTitle}_ALL_L${levelNum}`;
+  const specificKey = `${conceptTitle}_${organiserName}_L${levelNum}`;
+
+  // Initialise mappings if they don't exist yet
+  if (!state.currentPlannerData.mappings[commonKey]) {
+    state.currentPlannerData.mappings[commonKey] = { groups: [] };
+  }
+  if (!state.currentPlannerData.mappings[specificKey]) {
+    state.currentPlannerData.mappings[specificKey] = {
       groups: [{ sequence: 1, name: '', knowItems: [''], doItems: [''], competencyId: '', sequenceTag: 1 }],
     };
   }
 
+  // ── Section 1: Common bundles (apply to all organisers) ────────────────────
+  const commonSection = document.createElement('div');
+  commonSection.className = 'space-y-4';
+  commonSection.innerHTML = `
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg">
+        <svg class="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span class="text-xs font-black text-teal-700 uppercase tracking-wide">Common — applies to all organisers</span>
+      </div>
+      <span class="text-xs text-slate-400">These bundles will appear in every organiser's matrix cells.</span>
+    </div>`;
+  const commonContainer = document.createElement('div');
   if (currentViewMode === 'grid') {
-    renderGridMode(key, container);
+    renderGridMode(commonKey, commonContainer);
   } else {
-    renderCardMode(key, container);
+    renderCardMode(commonKey, commonContainer);
   }
+  commonSection.appendChild(commonContainer);
+
+  // ── Divider ────────────────────────────────────────────────────────────────
+  const divider = document.createElement('div');
+  divider.className = 'flex items-center gap-3 py-2';
+  divider.innerHTML = `
+    <div class="flex-1 border-t border-slate-200"></div>
+    <div class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg shrink-0">
+      <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+      <span class="text-xs font-black text-indigo-700 uppercase tracking-wide">Specific to: ${escapeHtml(organiserName)}</span>
+    </div>
+    <div class="flex-1 border-t border-slate-200"></div>`;
+
+  // ── Section 2: Organiser-specific bundles ──────────────────────────────────
+  const specificSection = document.createElement('div');
+  const specificContainer = document.createElement('div');
+  if (currentViewMode === 'grid') {
+    renderGridMode(specificKey, specificContainer);
+  } else {
+    renderCardMode(specificKey, specificContainer);
+  }
+  specificSection.appendChild(specificContainer);
+
+  container.appendChild(commonSection);
+  container.appendChild(divider);
+  container.appendChild(specificSection);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
