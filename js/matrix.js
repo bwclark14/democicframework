@@ -105,7 +105,6 @@ function resolveLinkedGroupForMatrix(group) {
 function getAreaTitle(areaId) {
   return state.curriculumData.find((a) => a.id === areaId)?.title || 'Unknown area';
 }
-}
 
 // ── Toggle bundle collapse ────────────────────────────────────────────────────
 
