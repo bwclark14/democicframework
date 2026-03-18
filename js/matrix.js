@@ -44,14 +44,14 @@ export function buildBundleHtml(g, showSeqBadge = true) {
   const hasBody = hasKnow || hasDo || comp;
 
   return `
-    <div class="border border-slate-200 rounded-lg overflow-hidden bundle-card">
+    <div class="w-full border border-slate-200 rounded-lg overflow-hidden bundle-card">
       <button type="button" onclick="toggleBundle(this)"
-        class="w-full flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 transition text-left">
+        class="w-full flex items-start gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 transition text-left">
         ${showSeqBadge
-          ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${colCls} shrink-0">${tag}</span>`
+          ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${colCls} shrink-0 mt-0.5">${tag}</span>`
           : ''}
-        <span class="text-[11px] font-bold text-slate-700 flex-1 truncate">${escapeHtml(g.name || 'Unnamed bundle')}</span>
-        ${hasBody ? `<svg class="w-3.5 h-3.5 text-slate-400 rotate-icon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>` : ''}
+        <span class="text-[11px] font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(g.name || 'Unnamed bundle')}</span>
+        ${hasBody ? `<svg class="w-3.5 h-3.5 text-slate-400 rotate-icon shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>` : ''}
       </button>
       ${hasBody ? `
       <div class="bundle-body collapse-content">
@@ -91,17 +91,33 @@ window.toggleBundle = (btn) => {
 export function updateMatrixFilters() {
   const areaId  = document.getElementById('matrix-area-select').value;
   const oSelect = document.getElementById('matrix-organiser-select');
+  const cList   = document.getElementById('matrix-concept-list');
 
   if (!areaId) { renderMatrix(); return; }
 
   const area = state.curriculumData.find((a) => a.id === areaId);
   if (!area) return;
 
+  // Organiser dropdown
   oSelect.innerHTML =
     '<option value="">All Organisers</option>' +
     (area.organisers || [])
       .map((o) => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`)
       .join('');
+
+  // Concept checkboxes — preserve previous selections where names still exist
+  const prev = new Set(
+    Array.from(document.querySelectorAll('.matrix-concept-cb:checked')).map((cb) => cb.value)
+  );
+  cList.innerHTML = (area.concepts || []).map((c) => `
+    <label class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-indigo-400 transition text-xs font-medium text-slate-700 select-none">
+      <input type="checkbox" class="matrix-concept-cb rounded text-indigo-600"
+        value="${escapeHtml(c.title)}"
+        ${prev.size === 0 || prev.has(c.title) ? 'checked' : ''}
+        onchange="renderMatrix()">
+      ${escapeHtml(c.title)}
+    </label>`).join('');
+  document.getElementById('matrix-concept-filter-row').classList.remove('hidden');
 
   renderMatrix();
 }
@@ -112,6 +128,9 @@ function getMatrixContext() {
   const areaId  = document.getElementById('matrix-area-select').value;
   const oFilter = document.getElementById('matrix-organiser-select').value;
   const levels  = Array.from(document.querySelectorAll('.matrix-level-cb:checked')).map((cb) => cb.value);
+  const selectedConcepts = new Set(
+    Array.from(document.querySelectorAll('.matrix-concept-cb:checked')).map((cb) => cb.value)
+  );
   const container = document.getElementById('matrix-container');
 
   if (!areaId) {
@@ -128,7 +147,12 @@ function getMatrixContext() {
     ? [area.organisers.find((o) => o.name === oFilter)].filter(Boolean)
     : (area.organisers || []);
 
-  return { area, planning, orgs, oFilter, levels, container };
+  // Filter concepts — if none checked, show all
+  const concepts = selectedConcepts.size > 0
+    ? (area.concepts || []).filter((c) => selectedConcepts.has(c.title))
+    : (area.concepts || []);
+
+  return { area, concepts, planning, orgs, oFilter, levels, container };
 }
 
 // ── Helper: sort and render a list of bundles into HTML ───────────────────────
@@ -148,7 +172,7 @@ function bundleCellHtml(groups) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function renderConceptualMatrix(ctx) {
-  const { area, planning, orgs, levels, container } = ctx;
+  const { concepts, planning, orgs, levels, container } = ctx; // concepts already filtered
 
   // ── Collapse/expand all toolbar ───────────────────────────────────────────
   const toolbar = `
@@ -179,7 +203,7 @@ function renderConceptualMatrix(ctx) {
       </thead>
       <tbody>`;
 
-  area.concepts.forEach((concept, cIdx) => {
+  concepts.forEach((concept, cIdx) => {
     const collapseId = `concept-rows-${cIdx}`;
 
     // ── Concept row: name in col 1, level descriptions in level cols ──────────
@@ -242,7 +266,7 @@ window.toggleAllConceptRows = (expand) => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function renderKnowDoMatrix(ctx) {
-  const { area, planning, orgs, oFilter, levels, container } = ctx;
+  const { concepts, planning, orgs, oFilter, levels, container } = ctx;
   const allOrgs = !oFilter; // true when "All Organisers" is selected
 
   let html = `
@@ -255,7 +279,7 @@ function renderKnowDoMatrix(ctx) {
       </thead>
       <tbody class="divide-y">`;
 
-  area.concepts.forEach((concept) => {
+  concepts.forEach((concept) => {
 
     if (allOrgs) {
       // ── Concept header row (no level descriptions) ──
