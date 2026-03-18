@@ -91,7 +91,9 @@ window.runExplorer = () => {
     const m       = planning.mappings[key] || { groups: [] };
 
     const cells = SEQ_TAGS.map((tag) => {
-      const bundles = (m.groups || []).filter((g) => (g.sequenceTag ?? 1) === tag);
+      const bundles = (m.groups || [])
+        .filter((g) => (g.sequenceTag ?? 1) === tag)
+        .sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
       return bundles.map((g, i) => buildBundleHtml(g, `ex-${conceptTitle}-${tag}-${i}`)).join('') ||
         '<span class="text-[10px] text-slate-300 italic">—</span>';
     });
