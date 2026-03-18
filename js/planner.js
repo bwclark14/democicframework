@@ -90,6 +90,28 @@ export function renderPlannerGrid() {
   if (!area) return;
 
   const concept = area.concepts.find((c) => c.title === conceptTitle);
+  const applicable = new Set(concept?.applicableLevels ?? ['l1','l2','l3','l4']);
+
+  // Update level tabs — dim non-applicable ones
+  [1,2,3,4].forEach((n) => {
+    const tab = document.getElementById(`tab-l${n}`);
+    if (!tab) return;
+    const isApplicable = applicable.has(`l${n}`);
+    tab.disabled = !isApplicable;
+    tab.classList.toggle('opacity-30', !isApplicable);
+    tab.classList.toggle('cursor-not-allowed', !isApplicable);
+  });
+
+  // If current level is not applicable, switch to first applicable
+  if (!applicable.has(`l${state.currentPlannerLevel}`)) {
+    const first = [1,2,3,4].find((n) => applicable.has(`l${n}`));
+    if (first) {
+      state.currentPlannerLevel = first;
+      document.querySelectorAll('.level-tab').forEach((t) => t.classList.remove('active'));
+      document.getElementById(`tab-l${first}`)?.classList.add('active');
+    }
+  }
+
   if (concept) {
     document.getElementById('planner-header-title').innerText    = concept.title;
     document.getElementById('planner-header-desc').innerText     = concept.description || '';
@@ -100,6 +122,19 @@ export function renderPlannerGrid() {
 
   const container = document.getElementById('planner-active-level-view');
   container.innerHTML = '';
+
+  // If level not applicable, show a clear notice instead of the bundle editor
+  if (!applicable.has(`l${state.currentPlannerLevel}`)) {
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-16 text-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        </div>
+        <p class="text-sm font-semibold text-slate-500">This concept does not apply to Level ${state.currentPlannerLevel}</p>
+        <p class="text-xs text-slate-400">Update the concept's applicable levels in the Areas editor to enable this level.</p>
+      </div>`;
+    return;
+  }
 
   const key = `${conceptTitle}_${organiserName}_L${state.currentPlannerLevel}`;
   if (!state.currentPlannerData.mappings[key]) {
