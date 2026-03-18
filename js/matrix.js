@@ -1,7 +1,8 @@
 /**
  * matrix.js
  * Renders the progression matrix table for a selected curriculum area.
- * Bundles are collapsible and display their sequence tag.
+ * Bundles are sorted numerically by sequenceTag and are collapsible.
+ * Sequence badge is hidden when every bundle in a cell is tagged 1.
  */
 
 import { state, escapeHtml, triggerMath } from './state.js';
@@ -16,27 +17,37 @@ function seqColour(tag) {
 
 // ── Bundle HTML (shared by matrix and explorer) ───────────────────────────────
 
-export function buildBundleHtml(g, uid) {
-  const comp     = state.competencyData.find((c) => c.id === g.competencyId);
-  const tag      = g.sequenceTag ?? 1;
-  const colCls   = seqColour(tag);
-  const hasKnow  = (g.knowItems || []).some((k) => k.trim());
-  const hasDo    = (g.doItems   || []).some((d) => d.trim());
-  const hasBody  = hasKnow || hasDo || comp;
+/**
+ * @param {object}  g           - bundle group data
+ * @param {boolean} showSeqBadge - whether to render the sequence number badge
+ */
+export function buildBundleHtml(g, showSeqBadge = true) {
+  const comp    = state.competencyData.find((c) => c.id === g.competencyId);
+  const tag     = g.sequenceTag ?? 1;
+  const colCls  = seqColour(tag);
+  const hasKnow = (g.knowItems || []).some((k) => k.trim());
+  const hasDo   = (g.doItems   || []).some((d) => d.trim());
+  const hasBody = hasKnow || hasDo || comp;
 
   return `
     <div class="border border-slate-200 rounded-lg overflow-hidden bundle-card">
       <button type="button"
         onclick="toggleBundle(this)"
         class="w-full flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 transition text-left">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${colCls} shrink-0">${tag}</span>
+        ${showSeqBadge
+          ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${colCls} shrink-0">${tag}</span>`
+          : ''}
         <span class="text-[11px] font-bold text-slate-700 flex-1 truncate">${escapeHtml(g.name || 'Unnamed bundle')}</span>
-        ${hasBody ? `<svg class="w-3.5 h-3.5 text-slate-400 rotate-icon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>` : ''}
+        ${hasBody
+          ? `<svg class="w-3.5 h-3.5 text-slate-400 rotate-icon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`
+          : ''}
       </button>
       ${hasBody ? `
       <div class="bundle-body collapse-content">
         <div class="p-3 space-y-2 border-t border-slate-100">
-          ${comp ? `<button onclick="showCompInfo('${comp.id}')" class="text-[8px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100 uppercase hover:bg-violet-100 transition">${escapeHtml(comp.title)}</button>` : ''}
+          ${comp
+            ? `<button onclick="showCompInfo('${comp.id}')" class="text-[8px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100 uppercase hover:bg-violet-100 transition">${escapeHtml(comp.title)}</button>`
+            : ''}
           ${hasKnow ? `
           <div>
             <span class="text-[8px] font-bold text-indigo-400 uppercase tracking-tighter block mb-1">Know:</span>
@@ -56,7 +67,7 @@ export function buildBundleHtml(g, uid) {
     </div>`;
 }
 
-// ── Toggle bundle collapse (exposed globally) ─────────────────────────────────
+// ── Toggle bundle collapse ────────────────────────────────────────────────────
 
 window.toggleBundle = (btn) => {
   const card = btn.closest('.bundle-card');
@@ -124,6 +135,7 @@ export function renderMatrix() {
       <tbody class="divide-y">`;
 
   area.concepts.forEach((concept) => {
+    // Concept descriptor row
     html += `
       <tr class="bg-indigo-50/20">
         <td class="p-4 align-top border-r bg-white font-black text-slate-900 text-sm uppercase">${escapeHtml(concept.title)}</td>
@@ -146,7 +158,16 @@ export function renderMatrix() {
           ${levels
             .map((l) => {
               const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
-              const bundles = (m.groups || []).map((g, i) => buildBundleHtml(g, `m-${i}`)).join('');
+
+              // Sort bundles numerically by sequenceTag
+              const sorted = [...(m.groups || [])].sort(
+                (a, b) => (a.sequenceTag ?? 1) - (b.sequenceTag ?? 1),
+              );
+
+              // Only show badge when tags are not all 1
+              const allOne = sorted.every((g) => (g.sequenceTag ?? 1) === 1);
+
+              const bundles = sorted.map((g) => buildBundleHtml(g, !allOne)).join('');
               return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundles}</div></td>`;
             })
             .join('')}
@@ -158,6 +179,6 @@ export function renderMatrix() {
   triggerMath();
 }
 
-// ── Expose to window for inline onchange handlers in index.html ───────────────
+// ── Expose to window for inline onchange handlers ─────────────────────────────
 window.updateMatrixFilters = updateMatrixFilters;
 window.renderMatrix        = renderMatrix;
