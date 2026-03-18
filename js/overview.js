@@ -3,7 +3,7 @@
  * Renders the read-only Overview page for a selected curriculum area.
  */
 
-import { state, escapeHtml, triggerMath } from './state.js';
+import { state, escapeHtml, triggerMath, LEVELS } from './state.js';
 
 export function renderOverview() {
   const areaId    = document.getElementById('overview-area-select').value;
@@ -115,7 +115,7 @@ export function renderOverview() {
       <div class="space-y-4">
         ${(area.concepts || [])
           .map((c) => {
-            const applicable = c.applicableLevels ?? ['l1','l2','l3','l4'];
+            const applicable = c.applicableLevels ?? LEVELS.map(lv=>lv.key);
             const cols = applicable.length;
             const gridCls = cols === 1 ? 'grid-cols-1'
                           : cols === 2 ? 'grid-cols-2'
@@ -139,8 +139,8 @@ export function renderOverview() {
                   ${applicable.map((lk) => `
                     <div class="p-4 space-y-2">
                       <div class="flex items-center gap-1.5">
-                        <span class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">${lk.toUpperCase()}</span>
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Level ${lk.substring(1)}</span>
+                        <span class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">${LEVELS.find(lv=>lv.key===lk)?.label.charAt(0) ?? lk.toUpperCase()}</span>
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${LEVELS.find(lv=>lv.key===lk)?.label ?? lk}</span>
                       </div>
                       <p class="text-xs text-slate-700 leading-relaxed">${escapeHtml(c.levels[lk]) || '<span class="text-slate-300 italic">No statement defined.</span>'}</p>
                     </div>`).join('')}
