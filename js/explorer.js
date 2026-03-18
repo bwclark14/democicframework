@@ -108,7 +108,7 @@ window.runExplorer = () => {
   ];
 
   let html = `
-    <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+    <div class="overflow-x-auto scroll-hint rounded-xl border border-slate-200 shadow-sm bg-white">
       <table class="w-full text-left table-fixed">
         <thead>
           <tr class="border-b">
