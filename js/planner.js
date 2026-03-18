@@ -45,10 +45,16 @@ window.setPlannerViewMode = (mode) => {
 
 // ── Area selection ────────────────────────────────────────────────────────────
 
+let _plannerUnsubscribe = null; // holds the current onSnapshot unsubscribe fn
+
 window.loadPlannerData = async () => {
   const areaId = document.getElementById('planner-area-select').value;
 
+  // Unsubscribe any previous listener
+  if (_plannerUnsubscribe) { _plannerUnsubscribe(); _plannerUnsubscribe = null; }
+
   if (!areaId) {
+    state.currentPlannerData = null;
     document.getElementById('planner-concept-container').classList.add('hidden');
     document.getElementById('planner-organiser-container').classList.add('hidden');
     document.getElementById('planner-grid-container').classList.add('hidden');
@@ -58,20 +64,36 @@ window.loadPlannerData = async () => {
   const area = state.curriculumData.find((a) => a.id === areaId);
   if (!area) return;
 
+  // Preserve current selections across re-loads (e.g. when navigating back)
+  const prevConcept   = document.getElementById('planner-concept-select').value;
+  const prevOrganiser = document.getElementById('planner-organiser-select').value;
+
   document.getElementById('planner-concept-select').innerHTML = area.concepts
     .map((c) => `<option value="${escapeHtml(c.title)}">${escapeHtml(c.title)}</option>`)
     .join('');
-
   document.getElementById('planner-organiser-select').innerHTML = area.organisers
     .map((o) => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`)
     .join('');
+
+  // Restore previous selections if they still exist in the new area
+  if (prevConcept && area.concepts.some((c) => c.title === prevConcept)) {
+    document.getElementById('planner-concept-select').value = prevConcept;
+  }
+  if (prevOrganiser && area.organisers.some((o) => o.name === prevOrganiser)) {
+    document.getElementById('planner-organiser-select').value = prevOrganiser;
+  }
 
   document.getElementById('planner-concept-container').classList.remove('hidden');
   document.getElementById('planner-organiser-container').classList.remove('hidden');
   document.getElementById('planner-grid-container').classList.remove('hidden');
 
+  // Seed currentPlannerData immediately from allPlanningData so renderPlannerGrid
+  // doesn't have to wait for the snapshot round-trip on first render
+  state.currentPlannerData = state.allPlanningData[areaId] ?? { mappings: {} };
+  renderPlannerGrid();
+
   const planDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'planningMaps', areaId);
-  onSnapshot(planDocRef, (snap) => {
+  _plannerUnsubscribe = onSnapshot(planDocRef, (snap) => {
     state.currentPlannerData = snap.exists() ? snap.data() : { mappings: {} };
     renderPlannerGrid();
   });
@@ -141,14 +163,12 @@ export function renderPlannerGrid() {
   const commonKey   = `${conceptTitle}_ALL_L${levelNum}`;
   const specificKey = `${conceptTitle}_${organiserName}_L${levelNum}`;
 
-  // Initialise mappings if they don't exist yet
+  // Initialise mappings if they don't exist yet (empty — user adds bundles explicitly)
   if (!state.currentPlannerData.mappings[commonKey]) {
     state.currentPlannerData.mappings[commonKey] = { groups: [] };
   }
   if (!state.currentPlannerData.mappings[specificKey]) {
-    state.currentPlannerData.mappings[specificKey] = {
-      groups: [{ sequence: 1, name: '', knowItems: [''], doItems: [''], competencyId: '', sequenceTag: 1 }],
-    };
+    state.currentPlannerData.mappings[specificKey] = { groups: [] };
   }
 
   // ── Section 1: Common bundles (apply to all organisers) ────────────────────
@@ -928,3 +948,6 @@ window.confirmLinkBundle = (srcAreaId, conceptTitle, organiserName, level, bundl
   renderPlannerGrid();
   savePlannerState();
 };
+
+// ── Expose to window for inline onchange handlers ─────────────────────────────
+window.renderPlannerGrid = renderPlannerGrid;
