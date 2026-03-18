@@ -74,13 +74,15 @@ const VIEWS = ['designer', 'planner', 'overview', 'matrix', 'competencies', 'exp
 window.switchView = (view) => {
   VIEWS.forEach((v) => {
     document.getElementById(`view-${v}`).classList.add('hidden');
-    document.getElementById(`nav-${v}`).classList.remove('bg-white', 'shadow-sm', 'text-indigo-600');
-    document.getElementById(`nav-${v}`).classList.add('text-slate-500');
+    document.getElementById(`nav-${v}`)?.classList.remove('bg-white', 'shadow-sm', 'text-indigo-600');
+    document.getElementById(`nav-${v}`)?.classList.add('text-slate-500');
+    document.getElementById(`mob-nav-${v}`)?.classList.remove('active-mob');
   });
 
   document.getElementById(`view-${view}`).classList.remove('hidden');
-  document.getElementById(`nav-${view}`).classList.add('bg-white', 'shadow-sm', 'text-indigo-600');
-  document.getElementById(`nav-${view}`).classList.remove('text-slate-500');
+  document.getElementById(`nav-${view}`)?.classList.add('bg-white', 'shadow-sm', 'text-indigo-600');
+  document.getElementById(`nav-${view}`)?.classList.remove('text-slate-500');
+  document.getElementById(`mob-nav-${view}`)?.classList.add('active-mob');
 
   // For views with an area select, auto-pick the first option when nothing
   // is selected so the user sees content immediately on first visit.
