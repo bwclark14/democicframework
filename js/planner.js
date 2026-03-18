@@ -485,38 +485,54 @@ function populateItemContainers(key, index, group, safeId) {
   }
 }
 
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 function createItemInput(key, bundleIndex, listType, itemIndex, value, compact = false) {
   const safeId    = getSafeId(key, bundleIndex);
   const previewId = `preview-${safeId}-${listType}-${itemIndex}`;
   const div = document.createElement('div');
-  div.className = compact
-    ? 'group/item flex items-start gap-1'
-    : 'group/item bg-slate-50 border border-slate-100 rounded-lg p-2 transition hover:bg-white hover:border-slate-200 hover:shadow-sm';
 
   if (compact) {
+    // Grid mode: slightly more compact but still readable
+    div.className = 'group/item flex items-start gap-1.5';
     div.innerHTML = `
       <textarea
         onblur="cleanupEmptyItems('${key}', ${bundleIndex}, '${listType}')"
-        oninput="updatePlannerItemValue('${key}', ${bundleIndex}, '${listType}', ${itemIndex}, this.value, '${previewId}')"
-        class="flex-1 text-[10px] bg-transparent border border-slate-100 rounded p-1 focus:ring-1 focus:ring-indigo-400 resize-none min-h-[1.4rem]"
-        placeholder="Statement…" rows="1">${escapeHtml(value)}</textarea>
+        oninput="updatePlannerItemValue('${key}', ${bundleIndex}, '${listType}', ${itemIndex}, this.value, '${previewId}'); autoResizeTA(this)"
+        class="flex-1 text-xs bg-white border border-slate-200 rounded-md px-2 py-1.5 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 focus:bg-white resize-none leading-snug"
+        placeholder="Statement…" rows="2">${escapeHtml(value)}</textarea>
       <button onclick="removePlannerItem('${key}', ${bundleIndex}, '${listType}', ${itemIndex})"
-        class="text-slate-300 hover:text-red-500 text-xs opacity-0 group-hover/item:opacity-100 mt-0.5">&times;</button>`;
+        class="text-slate-300 hover:text-red-500 text-sm opacity-0 group-hover/item:opacity-100 mt-1 shrink-0">&times;</button>`;
   } else {
+    // Card mode: full-width, clearly readable
+    div.className = 'group/item bg-white border border-slate-200 rounded-lg transition focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 hover:border-slate-300';
     div.innerHTML = `
-      <div class="flex items-center space-x-2">
+      <div class="flex items-start gap-2 p-2.5">
         <textarea
           onblur="cleanupEmptyItems('${key}', ${bundleIndex}, '${listType}')"
-          oninput="updatePlannerItemValue('${key}', ${bundleIndex}, '${listType}', ${itemIndex}, this.value, '${previewId}')"
-          class="flex-1 text-[11px] bg-transparent border-none focus:ring-0 p-0 resize-none min-h-[1.5rem]"
-          placeholder="Type statement..." rows="1">${escapeHtml(value)}</textarea>
+          oninput="updatePlannerItemValue('${key}', ${bundleIndex}, '${listType}', ${itemIndex}, this.value, '${previewId}'); autoResizeTA(this)"
+          class="flex-1 text-sm bg-transparent border-none focus:ring-0 p-0 resize-none leading-relaxed"
+          placeholder="Type statement…" rows="2">${escapeHtml(value)}</textarea>
         <button onclick="removePlannerItem('${key}', ${bundleIndex}, '${listType}', ${itemIndex})"
-          class="text-slate-300 hover:text-red-500 text-xs opacity-0 group-hover/item:opacity-100 transition-opacity">&times;</button>
+          class="text-slate-300 hover:text-red-500 text-sm opacity-0 group-hover/item:opacity-100 transition-opacity mt-0.5 shrink-0">&times;</button>
       </div>
-      <div class="math-preview hidden" id="${previewId}"></div>`;
+      <div class="math-preview px-2.5 pb-1.5 hidden" id="${previewId}"></div>`;
   }
+
+  // Auto-resize after the element is inserted into the DOM
+  setTimeout(() => {
+    const ta = div.querySelector('textarea');
+    if (ta) autoResize(ta);
+  }, 0);
+
   return div;
 }
+
+// Exposed to window so inline oninput handlers can call it
+window.autoResizeTA = (el) => autoResize(el);
 
 // ── Mutation helpers ──────────────────────────────────────────────────────────
 
@@ -534,7 +550,7 @@ window.updatePlannerItemValue = (key, bundleIndex, listType, itemIndex, value, p
   state.currentPlannerData.mappings[key].groups[bundleIndex][listType][itemIndex] = value;
   updateMathPreview(previewId, value);
   clearTimeout(autoSaveTimeout);
-  autoSaveTimeout = setTimeout(() => savePlannerState(), 800);
+  autoSaveTimeout = setTimeout(() => savePlannerState(), 2500);
 };
 
 window.addPlannerItem = (key, bundleIndex, listType) => {
@@ -558,7 +574,7 @@ window.updatePlannerValue = (key, index, field, value) => {
   if (!state.currentPlannerData.mappings[key]) return;
   state.currentPlannerData.mappings[key].groups[index][field] = value;
   clearTimeout(autoSaveTimeout);
-  autoSaveTimeout = setTimeout(() => savePlannerState(), 800);
+  autoSaveTimeout = setTimeout(() => savePlannerState(), 2500);
 };
 
 window.addPlannerGroup = (key) => {
