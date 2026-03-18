@@ -5,7 +5,7 @@
  * and selected concepts as rows, with collapsible bundles in each cell.
  */
 
-import { state, escapeHtml, triggerMath } from './state.js';
+import { state, escapeHtml, triggerMath, LEVELS } from './state.js';
 import { buildBundleHtml }               from './matrix.js';
 
 // ── Step cascade ──────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ window.explorerLevelChanged = () => {
 
   // Only show concepts that are applicable to this level
   const applicableConcepts = (area.concepts || []).filter((c) => {
-    const ap = c.applicableLevels ?? ['l1','l2','l3','l4'];
+    const ap = c.applicableLevels ?? LEVELS.map(lv=>lv.key);
     return ap.includes(`l${level}`);
   });
 
