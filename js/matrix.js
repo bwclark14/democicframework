@@ -150,11 +150,27 @@ function bundleCellHtml(groups) {
 function renderConceptualMatrix(ctx) {
   const { area, planning, orgs, levels, container } = ctx;
 
+  // ── Collapse/expand all toolbar ───────────────────────────────────────────
+  const toolbar = `
+    <div class="flex items-center justify-end px-3 py-2 border-b border-slate-200 bg-slate-50/60">
+      <button onclick="toggleAllConceptRows(true)"
+        class="text-[11px] font-semibold text-slate-500 hover:text-slate-700 px-2.5 py-1 rounded hover:bg-slate-100 transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        Expand all
+      </button>
+      <span class="text-slate-300 mx-1">|</span>
+      <button onclick="toggleAllConceptRows(false)"
+        class="text-[11px] font-semibold text-slate-500 hover:text-slate-700 px-2.5 py-1 rounded hover:bg-slate-100 transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+        Collapse all
+      </button>
+    </div>`;
+
   let html = `
     <table class="w-full text-left matrix-table table-fixed border-collapse">
       <thead>
         <tr>
-          <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-44"></th>
+          <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-44">Concept</th>
           ${levels.map((l) => `
             <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 last:border-r-0">
               Level ${l.substring(1)}
@@ -166,34 +182,27 @@ function renderConceptualMatrix(ctx) {
   area.concepts.forEach((concept, cIdx) => {
     const collapseId = `concept-rows-${cIdx}`;
 
-    // ── Concept title row: spans all columns, acts as the toggle ──────────────
+    // ── Concept row: name in col 1, level descriptions in level cols ──────────
+    // This row is always visible — it is never collapsed.
     html += `
-      <tr class="border-t-2 border-indigo-200 bg-indigo-50/40">
-        <td colspan="${levels.length + 1}" class="px-4 py-2.5">
+      <tr class="border-t-2 border-indigo-200 bg-indigo-50/30">
+        <td class="p-3 align-top border-r border-slate-200">
           <button onclick="toggleConceptRows('${collapseId}', this)"
-            class="flex items-center gap-2 w-full text-left">
-            <svg class="w-4 h-4 text-indigo-400 rotate-icon expanded shrink-0"
+            class="flex items-start gap-2 w-full text-left group">
+            <svg class="w-4 h-4 text-indigo-400 rotate-icon expanded shrink-0 mt-0.5"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
-            <span class="font-black text-slate-800 text-sm uppercase tracking-tight">${escapeHtml(concept.title)}</span>
+            <span class="font-black text-slate-800 text-sm uppercase tracking-tight leading-snug">${escapeHtml(concept.title)}</span>
           </button>
         </td>
-      </tr>`;
-
-    // ── Description row: label cell + one td per level ────────────────────────
-    html += `
-      <tr class="concept-collapsible-row bg-white border-t border-slate-100" data-collapse-id="${collapseId}">
-        <td class="p-3 pl-8 align-top border-r border-slate-100 bg-indigo-50/20">
-          <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Description</span>
-        </td>
         ${levels.map((l) => `
-          <td class="p-3 align-top border-r border-slate-100 last:border-r-0">
+          <td class="p-3 align-top border-r border-slate-200 last:border-r-0">
             <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(concept.levels[l]) || '<span class="text-slate-300 italic">—</span>'}</p>
           </td>`).join('')}
       </tr>`;
 
-    // ── One row per organiser ─────────────────────────────────────────────────
+    // ── Organiser rows: these are the collapsible children ────────────────────
     orgs.forEach((org) => {
       html += `
         <tr class="concept-collapsible-row border-t border-slate-100 hover:bg-slate-50/40"
@@ -209,7 +218,7 @@ function renderConceptualMatrix(ctx) {
     });
   });
 
-  container.innerHTML = html + '</tbody></table>';
+  container.innerHTML = toolbar + html + '</tbody></table>';
 }
 
 window.toggleConceptRows = (collapseId, btn) => {
@@ -218,6 +227,14 @@ window.toggleConceptRows = (collapseId, btn) => {
   const isExpanded = icon.classList.contains('expanded');
   rows.forEach((r) => { r.style.display = isExpanded ? 'none' : ''; });
   icon.classList.toggle('expanded', !isExpanded);
+};
+
+window.toggleAllConceptRows = (expand) => {
+  const allRows = document.querySelectorAll('.concept-collapsible-row');
+  allRows.forEach((r) => { r.style.display = expand ? '' : 'none'; });
+  document.querySelectorAll('#matrix-container .rotate-icon').forEach((icon) => {
+    icon.classList.toggle('expanded', expand);
+  });
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
