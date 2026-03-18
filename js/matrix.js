@@ -363,16 +363,17 @@ function renderKnowDoNormal(ctx) {
       orgs.forEach((org) => {
         const hasAny = levels.some((l) => {
           if (!applicable.has(l)) return false;
-          const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-          return (m.groups || []).some((g) => hasContent(g));
+          const lNum = levelByKey(l).plannerNum;
+          const cm = planning.mappings[`${concept.title}_ALL_L${lNum}`] || { groups: [] };
+          const sm = planning.mappings[`${concept.title}_${org.name}_L${lNum}`] || { groups: [] };
+          return [...cm.groups, ...sm.groups].some((g) => hasContent(g));
         });
         if (!hasAny) return;
         html += `<tr>
           <td class="p-3 pl-8 align-top border-r bg-slate-50 text-xs font-bold text-slate-600">${escapeHtml(org.name)}</td>
           ${levels.map((l) => {
             if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"></td>`;
-            const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-            return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups) || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
+            return `<td class="p-3 align-top border-r"><div class="space-y-2">${mergedBundlesHtml(concept, org.name, l, planning)}</div></td>`;
           }).join('')}
         </tr>`;
       });
@@ -422,8 +423,9 @@ function renderKnowDoTransposed(ctx) {
         const hasAny = concepts.some((concept) => {
           const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv2) => lv2.key));
           if (!applicable.has(l)) return false;
-          const m = planning.mappings[`${concept.title}_${org.name}_L${lv.plannerNum}`] || { groups: [] };
-          return (m.groups || []).some((g) => hasContent(g));
+          const cm = planning.mappings[`${concept.title}_ALL_L${lv.plannerNum}`] || { groups: [] };
+          const sm = planning.mappings[`${concept.title}_${org.name}_L${lv.plannerNum}`] || { groups: [] };
+          return [...cm.groups, ...sm.groups].some((g) => hasContent(g));
         });
         if (!hasAny) return;
         html += `<tr>
