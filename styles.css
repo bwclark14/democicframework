@@ -45,3 +45,11 @@
   color: #4f46e5;
   background: #f5f3ff;
 }
+
+/* ── Planner view mode toggle ────────────────────────────────────────────── */
+.mode-toggle { color: #64748b; }
+.mode-toggle.active-mode {
+  background: white;
+  color: #4f46e5;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
