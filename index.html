@@ -22,19 +22,21 @@
 
   <!-- Header -->
   <header class="bg-white border-b sticky top-0 z-40 no-print">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center space-x-2.5 shrink-0">
         <div class="bg-indigo-600 p-2 rounded-lg">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332-4.5 1.253"></path>
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-slate-800 tracking-tight">Curriculum Designer</h1>
+        <h1 class="text-base font-bold text-slate-800 tracking-tight hidden sm:block">Curriculum Designer</h1>
+        <h1 class="text-base font-bold text-slate-800 tracking-tight sm:hidden">CD</h1>
       </div>
 
-      <nav class="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg">
+      <!-- Tablet+ nav pill (hidden on mobile) -->
+      <nav class="hidden md:flex items-center space-x-1 bg-slate-100 p-1 rounded-lg">
         <button onclick="switchView('designer')" id="nav-designer" class="px-3 py-1.5 rounded-md text-sm font-bold transition bg-white shadow-sm text-indigo-600">Areas</button>
-        <button onclick="switchView('planner')" id="nav-planner" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Know and Do</button>
+        <button onclick="switchView('planner')" id="nav-planner" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Know &amp; Do</button>
         <button onclick="switchView('competencies')" id="nav-competencies" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Competencies</button>
         <div class="h-4 w-px bg-slate-300 mx-1"></div>
         <button onclick="switchView('overview')" id="nav-overview" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Overview</button>
@@ -42,14 +44,44 @@
         <button onclick="switchView('explorer')" id="nav-explorer" class="px-3 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-700">Explorer</button>
       </nav>
 
-      <div id="user-info" class="hidden sm:flex items-center text-sm text-slate-500">
+      <div id="user-info" class="hidden sm:flex items-center text-sm text-slate-500 shrink-0">
         <span id="user-display-id" class="font-mono bg-slate-100 px-3 py-1 rounded-full"></span>
       </div>
     </div>
   </header>
 
+  <!-- Mobile bottom nav (visible only on mobile) -->
+  <nav id="mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 no-print" style="padding-bottom: env(safe-area-inset-bottom)">
+    <div class="flex overflow-x-auto scrollbar-none">
+      <button onclick="switchView('designer')" id="mob-nav-designer" class="mob-nav-btn active-mob flex-1 min-w-[72px] flex flex-col items-center gap-0.5 py-2.5 px-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        <span class="text-[10px] font-semibold leading-none">Areas</span>
+      </button>
+      <button onclick="switchView('planner')" id="mob-nav-planner" class="mob-nav-btn flex-1 min-w-[72px] flex flex-col items-center gap-0.5 py-2.5 px-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span class="text-[10px] font-semibold leading-none">Know &amp; Do</span>
+      </button>
+      <button onclick="switchView('competencies')" id="mob-nav-competencies" class="mob-nav-btn flex-1 min-w-[72px] flex flex-col items-center gap-0.5 py-2.5 px-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        <span class="text-[10px] font-semibold leading-none">Compet.</span>
+      </button>
+      <button onclick="switchView('overview')" id="mob-nav-overview" class="mob-nav-btn flex-1 min-w-[72px] flex flex-col items-center gap-0.5 py-2.5 px-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span class="text-[10px] font-semibold leading-none">Overview</span>
+      </button>
+      <button onclick="switchView('matrix')" id="mob-nav-matrix" class="mob-nav-btn flex-1 min-w-[72px] flex flex-col items-center gap-0.5 py-2.5 px-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"/></svg>
+        <span class="text-[10px] font-semibold leading-none">Matrix</span>
+      </button>
+      <button onclick="switchView('explorer')" id="mob-nav-explorer" class="mob-nav-btn flex-1 min-w-[72px] flex flex-col items-center gap-0.5 py-2.5 px-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <span class="text-[10px] font-semibold leading-none">Explorer</span>
+      </button>
+    </div>
+  </nav>
+
   <!-- View: Designer (Areas) -->
-  <main id="view-designer" class="view-transition max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main id="view-designer" class="view-transition max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
       <div>
         <h2 class="text-2xl font-bold text-slate-900">Curriculum Areas</h2>
@@ -70,7 +102,8 @@
   </main>
 
   <!-- View: Competencies -->
-  <main id="view-competencies" class="view-transition hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main id="view-competencies" class="view-transition hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
+  <!-- replaced --> mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
       <div>
         <h2 class="text-2xl font-bold text-slate-900">Competencies</h2>
@@ -87,7 +120,7 @@
   </main>
 
   <!-- View: Know and Do (Planner) -->
-  <main id="view-planner" class="view-transition hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main id="view-planner" class="view-transition hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
     <div class="mb-8">
       <h2 class="text-2xl font-bold text-slate-900">Know and Do</h2>
       <p class="text-slate-500 mt-1">Map individual statements for each area. Use $...$ for math.</p>
@@ -138,10 +171,10 @@
         <p id="planner-header-desc" class="text-sm text-indigo-700 leading-relaxed"></p>
       </div>
       <div class="flex border-b border-slate-200 bg-white rounded-t-xl overflow-hidden">
-        <button onclick="switchPlannerLevel(1)" id="tab-l1" class="level-tab flex-1 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 transition active">LEVEL 1</button>
-        <button onclick="switchPlannerLevel(2)" id="tab-l2" class="level-tab flex-1 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 transition">LEVEL 2</button>
-        <button onclick="switchPlannerLevel(3)" id="tab-l3" class="level-tab flex-1 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 transition">LEVEL 3</button>
-        <button onclick="switchPlannerLevel(4)" id="tab-l4" class="level-tab flex-1 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 transition">LEVEL 4</button>
+        <button onclick="switchPlannerLevel(1)" id="tab-l1" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition active"><span class="hidden sm:inline">LEVEL </span>1</button>
+        <button onclick="switchPlannerLevel(2)" id="tab-l2" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">LEVEL </span>2</button>
+        <button onclick="switchPlannerLevel(3)" id="tab-l3" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">LEVEL </span>3</button>
+        <button onclick="switchPlannerLevel(4)" id="tab-l4" class="level-tab flex-1 py-3 text-xs font-bold text-slate-500 hover:text-indigo-600 transition"><span class="hidden sm:inline">LEVEL </span>4</button>
       </div>
       <div id="planner-level-context" class="bg-white border-x border-b border-slate-200 p-6 rounded-b-xl shadow-sm mb-6">
         <div class="flex items-center space-x-2 mb-2">
@@ -155,7 +188,7 @@
   </main>
 
   <!-- View: Overview -->
-  <main id="view-overview" class="view-transition hidden max-w-5xl mx-auto px-4 py-8">
+  <main id="view-overview" class="view-transition hidden max-w-5xl mx-auto px-4 py-8 pb-24 md:pb-8">
     <div class="no-print bg-white border rounded-xl p-6 mb-8 shadow-sm">
       <label class="block">
         <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Select Curriculum Area to View</span>
@@ -166,7 +199,7 @@
   </main>
 
   <!-- View: Matrix -->
-  <main id="view-matrix" class="view-transition hidden max-w-[1600px] mx-auto px-4 py-8">
+  <main id="view-matrix" class="view-transition hidden max-w-[1600px] mx-auto px-4 py-8 pb-24 md:pb-8">
     <div class="no-print bg-white border rounded-xl p-6 mb-8 shadow-sm space-y-5">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
@@ -179,7 +212,7 @@
         </div>
         <div>
           <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Levels</label>
-          <div class="flex gap-4 items-center h-10">
+          <div class="flex flex-wrap gap-3 items-center">
             <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l1" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L1</label>
             <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l2" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L2</label>
             <label class="flex items-center text-sm font-medium"><input type="checkbox" checked value="l3" onchange="renderMatrix()" class="matrix-level-cb mr-2"> L3</label>
@@ -204,11 +237,11 @@
         </div>
       </div>
     </div>
-    <div id="matrix-container" class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white"></div>
+    <div id="matrix-container" class="overflow-x-auto scroll-hint rounded-xl border border-slate-200 shadow-sm bg-white"></div>
   </main>
 
   <!-- View: Level Explorer -->
-  <main id="view-explorer" class="view-transition hidden max-w-[1600px] mx-auto px-4 py-8">
+  <main id="view-explorer" class="view-transition hidden max-w-[1600px] mx-auto px-4 py-8 pb-24 md:pb-8">
     <div class="mb-8">
       <h2 class="text-2xl font-bold text-slate-900">Level Explorer</h2>
       <p class="text-slate-500 mt-1">Select an area, organiser, level and concepts to explore Know and Do bundles by sequence.</p>
