@@ -53,8 +53,20 @@ window.explorerLevelChanged = () => {
   const area = state.curriculumData.find((a) => a.id === areaId);
   if (!area) return;
 
+  // Only show concepts that are applicable to this level
+  const applicableConcepts = (area.concepts || []).filter((c) => {
+    const ap = c.applicableLevels ?? ['l1','l2','l3','l4'];
+    return ap.includes(`l${level}`);
+  });
+
   const container = document.getElementById('explorer-concepts-list');
-  container.innerHTML = (area.concepts || []).map((c) => `
+  if (applicableConcepts.length === 0) {
+    container.innerHTML = '<p class="text-xs text-slate-400 italic">No concepts apply to this level.</p>';
+    document.getElementById('explorer-concepts-row').classList.remove('hidden');
+    return;
+  }
+
+  container.innerHTML = applicableConcepts.map((c) => `
     <label class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-indigo-400 transition text-xs font-medium text-slate-700 select-none">
       <input type="checkbox" class="explorer-concept-cb rounded text-indigo-600"
         value="${escapeHtml(c.title)}" checked
@@ -64,7 +76,6 @@ window.explorerLevelChanged = () => {
 
   document.getElementById('explorer-concepts-row').classList.remove('hidden');
   document.getElementById('explorer-run-btn').classList.remove('hidden');
-  // Auto-run immediately once concepts are available
   runExplorer();
 };
 
