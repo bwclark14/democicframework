@@ -5,7 +5,7 @@
  */
 
 import { db, APP_ID }         from './firebase.js';
-import { state, escapeHtml, triggerMath } from './state.js';
+import { state, escapeHtml, triggerMath, LEVELS } from './state.js';
 import {
   collection, doc, addDoc, setDoc, deleteDoc,
 } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
@@ -131,7 +131,8 @@ window.addConceptRow = (data = null) => {
   div.className = 'concept-item bg-white border border-slate-200 rounded-lg overflow-hidden';
 
   // Default: all levels applicable if not stored
-  const applicable = data?.applicableLevels ?? ['l1','l2','l3','l4'];
+  const allKeys   = LEVELS.map((l) => l.key);
+  const applicable = data?.applicableLevels ?? allKeys;
 
   div.innerHTML = `
     <div class="p-3 bg-emerald-50/30 border-b space-y-3">
@@ -148,25 +149,21 @@ window.addConceptRow = (data = null) => {
       <textarea placeholder="Overall Concept Description..." class="c-desc w-full text-xs bg-white border border-emerald-100 rounded-md p-2 focus:ring-emerald-500 min-h-[40px]">${escapeHtml(data?.description || '')}</textarea>
       <div class="flex items-center gap-3 pt-1">
         <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0">Applies to</span>
-        ${[1,2,3,4].map((n) => `
+        ${LEVELS.map((lv) => `
           <label class="flex items-center gap-1 text-xs font-medium text-slate-600 cursor-pointer">
-            <input type="checkbox" class="c-level-cb rounded text-emerald-600" value="l${n}"
-              ${applicable.includes(`l${n}`) ? 'checked' : ''}>
-            L${n}
+            <input type="checkbox" class="c-level-cb rounded text-emerald-600" value="${lv.key}"
+              ${applicable.includes(lv.key) ? 'checked' : ''}>
+            ${lv.short === lv.label.charAt(0) ? lv.label : lv.label}
           </label>`).join('')}
       </div>
     </div>
     <div class="progression-panel collapse-content">
-      <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 bg-white">
-        ${[1, 2, 3, 4]
-          .map(
-            (l) => `
+      <div class="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 bg-white">
+        ${LEVELS.map((lv) => `
           <div class="space-y-1">
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Level ${l}</label>
-            <textarea class="c-l${l} w-full text-xs border border-slate-100 rounded p-2 h-24 focus:ring-emerald-500">${escapeHtml(data?.levels?.[`l${l}`] || '')}</textarea>
-          </div>`,
-          )
-          .join('')}
+            <label class="text-[10px] font-bold text-slate-400 uppercase">${lv.label}</label>
+            <textarea class="c-${lv.key} w-full text-xs border border-slate-100 rounded p-2 h-24 focus:ring-emerald-500">${escapeHtml(data?.levels?.[lv.key] || '')}</textarea>
+          </div>`).join('')}
       </div>
     </div>`;
   container.appendChild(div);
@@ -211,17 +208,18 @@ window.saveArea = async () => {
     description: item.querySelector('.bi-desc').value,
   })).filter((bi) => bi.title.trim());
 
-  const concepts = Array.from(document.querySelectorAll('.concept-item')).map((item) => ({
-    title:       item.querySelector('.c-title').value,
-    description: item.querySelector('.c-desc').value,
-    applicableLevels: Array.from(item.querySelectorAll('.c-level-cb:checked')).map((cb) => cb.value),
-    levels: {
-      l1: item.querySelector('.c-l1').value,
-      l2: item.querySelector('.c-l2').value,
-      l3: item.querySelector('.c-l3').value,
-      l4: item.querySelector('.c-l4').value,
-    },
-  })).filter((c) => c.title.trim());
+  const concepts = Array.from(document.querySelectorAll('.concept-item')).map((item) => {
+    const levels = {};
+    LEVELS.forEach((lv) => {
+      levels[lv.key] = item.querySelector(`.c-${lv.key}`)?.value ?? '';
+    });
+    return {
+      title:            item.querySelector('.c-title').value,
+      description:      item.querySelector('.c-desc').value,
+      applicableLevels: Array.from(item.querySelectorAll('.c-level-cb:checked')).map((cb) => cb.value),
+      levels,
+    };
+  }).filter((c) => c.title.trim());
 
   const organisers = Array.from(document.querySelectorAll('.organiser-item')).map((item) => ({
     name: item.querySelector('.o-name').value,
