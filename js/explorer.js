@@ -99,18 +99,36 @@ window.runExplorer = () => {
   const planning = state.allPlanningData[areaId] || { mappings: {} };
   const SEQ_TAGS = [1, 2, 3];
 
-  // For each concept × sequence tag, collect matching bundles
+  // For each concept × sequence tag, collect matching bundles (common + organiser-specific)
   const rows = selectedConcepts.map((conceptTitle) => {
-    const concept = area?.concepts.find((c) => c.title === conceptTitle);
-    const key     = `${conceptTitle}_${org}_L${level}`;
-    const m       = planning.mappings[key] || { groups: [] };
+    const concept     = area?.concepts.find((c) => c.title === conceptTitle);
+    const commonKey   = `${conceptTitle}_ALL_L${level}`;
+    const specificKey = `${conceptTitle}_${org}_L${level}`;
+    const commonGroups   = (planning.mappings[commonKey]   || { groups: [] }).groups || [];
+    const specificGroups = (planning.mappings[specificKey] || { groups: [] }).groups || [];
 
     const cells = SEQ_TAGS.map((tag) => {
-      const bundles = (m.groups || [])
-        .filter((g) => (g.sequenceTag ?? 1) === tag)
-        .sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
-      return bundles.map((g, i) => buildBundleHtml(g, `ex-${conceptTitle}-${tag}-${i}`)).join('') ||
-        '<span class="text-[10px] text-slate-300 italic">—</span>';
+      const sortFn = (a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+
+      const commonBundles   = commonGroups.filter((g) => (g.sequenceTag ?? 1) === tag).sort(sortFn);
+      const specificBundles = specificGroups.filter((g) => (g.sequenceTag ?? 1) === tag).sort(sortFn);
+
+      const commonHtml   = commonBundles.map((g) => buildBundleHtml(g, true)).join('');
+      const specificHtml = specificBundles.map((g) => buildBundleHtml(g, true)).join('');
+
+      if (!commonHtml && !specificHtml) return '<span class="text-[10px] text-slate-300 italic">—</span>';
+
+      let html = '';
+      if (commonHtml) { html += `<div class="space-y-2">${commonHtml}</div>`; }
+      if (commonHtml && specificHtml) {
+        html += `<div class="flex items-center gap-2 my-2">
+          <div class="flex-1 border-t border-teal-100"></div>
+          <span class="text-[8px] font-black text-teal-500 uppercase tracking-widest shrink-0">${escapeHtml(org)}</span>
+          <div class="flex-1 border-t border-teal-100"></div>
+        </div>`;
+      }
+      if (specificHtml) { html += `<div class="space-y-2">${specificHtml}</div>`; }
+      return html;
     });
 
     return { conceptTitle, levelDesc: concept?.levels[`l${level}`] || '', cells };
