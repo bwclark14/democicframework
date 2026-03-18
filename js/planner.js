@@ -1,15 +1,27 @@
 /**
  * planner.js
- * Handles the "Know and Do" planner view: bundle cards, level tabs,
- * real-time editing, and auto-saving to Firestore.
+ * Handles the "Know and Do" planner view.
+ * Supports two editing modes:
+ *   - Card view:  one card per bundle (original layout)
+ *   - Grid view:  rows = bundle names, columns = sequence tags (1/2/3),
+ *                 cells contain the Know/Do statement editors
  */
 
-import { db, APP_ID }                                from './firebase.js';
+import { db, APP_ID }                                          from './firebase.js';
 import { state, escapeHtml, triggerMath, getSafeId, updateMathPreview } from './state.js';
 import { doc, setDoc, onSnapshot }
   from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
 
-let autoSaveTimeout = null;
+let autoSaveTimeout  = null;
+let currentViewMode  = 'card'; // 'card' | 'grid'
+
+// ── Sequence tag colour classes ───────────────────────────────────────────────
+
+function seqBtnCls(active) {
+  return active
+    ? 'bg-indigo-600 text-white border-indigo-600'
+    : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400';
+}
 
 // ── Level tab switching ───────────────────────────────────────────────────────
 
@@ -19,6 +31,15 @@ window.switchPlannerLevel = (level) => {
     tab.classList.remove('active');
     if (tab.id === `tab-l${level}`) tab.classList.add('active');
   });
+  renderPlannerGrid();
+};
+
+// ── View mode toggle ──────────────────────────────────────────────────────────
+
+window.setPlannerViewMode = (mode) => {
+  currentViewMode = mode;
+  document.getElementById('planner-mode-card').classList.toggle('active-mode', mode === 'card');
+  document.getElementById('planner-mode-grid').classList.toggle('active-mode', mode === 'grid');
   renderPlannerGrid();
 };
 
@@ -56,11 +77,11 @@ window.loadPlannerData = async () => {
   });
 };
 
-// ── Grid renderer ─────────────────────────────────────────────────────────────
+// ── Main renderer — dispatches to card or grid mode ───────────────────────────
 
 export function renderPlannerGrid() {
-  const areaId       = document.getElementById('planner-area-select').value;
-  const conceptTitle = document.getElementById('planner-concept-select').value;
+  const areaId        = document.getElementById('planner-area-select').value;
+  const conceptTitle  = document.getElementById('planner-concept-select').value;
   const organiserName = document.getElementById('planner-organiser-select').value;
 
   if (!areaId || !conceptTitle || !organiserName || !state.currentPlannerData) return;
@@ -70,9 +91,9 @@ export function renderPlannerGrid() {
 
   const concept = area.concepts.find((c) => c.title === conceptTitle);
   if (concept) {
-    document.getElementById('planner-header-title').innerText = concept.title;
-    document.getElementById('planner-header-desc').innerText  = concept.description || '';
-    document.getElementById('planner-level-desc').innerText   =
+    document.getElementById('planner-header-title').innerText    = concept.title;
+    document.getElementById('planner-header-desc').innerText     = concept.description || '';
+    document.getElementById('planner-level-desc').innerText      =
       concept.levels[`l${state.currentPlannerLevel}`] || 'No level progression statement defined.';
     document.getElementById('planner-context-level-num').innerText = state.currentPlannerLevel;
   }
@@ -87,6 +108,18 @@ export function renderPlannerGrid() {
     };
   }
 
+  if (currentViewMode === 'grid') {
+    renderGridMode(key, container);
+  } else {
+    renderCardMode(key, container);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CARD MODE
+// ════════════════════════════════════════════════════════════════════════════
+
+function renderCardMode(key, container) {
   const levelData = state.currentPlannerData.mappings[key];
   const grid = document.createElement('div');
   grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start';
@@ -94,7 +127,7 @@ export function renderPlannerGrid() {
   const addBtn = document.createElement('button');
   addBtn.onclick = () => addPlannerGroup(key);
   addBtn.className =
-    'group border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-indigo-400 hover:bg-indigo-50 transition flex flex-col items-center justify-center space-y-2 h-full min-h-[300px]';
+    'group border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-indigo-400 hover:bg-indigo-50 transition flex flex-col items-center justify-center space-y-2 h-full min-h-[200px]';
   addBtn.innerHTML = `
     <div class="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition">
       <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,116 +137,388 @@ export function renderPlannerGrid() {
     <span class="font-bold text-slate-500 group-hover:text-indigo-600">New Bundle</span>`;
 
   (levelData.groups || []).forEach((group, index) => {
-    grid.appendChild(createPlannerGroupEl(key, index, group));
+    grid.appendChild(createCardEl(key, index, group));
   });
   grid.appendChild(addBtn);
   container.appendChild(grid);
   triggerMath();
 }
 
-// ── Bundle card builder ───────────────────────────────────────────────────────
-
-function createPlannerGroupEl(key, index, group) {
-  const safeId = getSafeId(key, index);
+function createCardEl(key, index, group) {
+  const safeId      = getSafeId(key, index);
+  const isCollapsed = group._collapsed ?? false;
+  const tag         = group.sequenceTag ?? 1;
   const compOptions =
     '<option value="">-- No Competency --</option>' +
     state.competencyData
-      .map(
-        (c) =>
-          `<option value="${c.id}" ${group.competencyId === c.id ? 'selected' : ''}>${escapeHtml(c.title)}</option>`,
-      )
+      .map((c) => `<option value="${c.id}" ${group.competencyId === c.id ? 'selected' : ''}>${escapeHtml(c.title)}</option>`)
       .join('');
 
+  const tagColour = tag === 1 ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                  : tag === 2 ? 'bg-amber-100 text-amber-700 border-amber-200'
+                              : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+
   const div = document.createElement('div');
-  div.className = 'bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col h-full';
+  div.className = 'bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col';
+
   div.innerHTML = `
-    <div class="p-3 bg-slate-50 border-b flex justify-between items-center">
-      <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bundle ${group.sequence || index + 1}</span>
-      <button onclick="removePlannerGroup('${key}', ${index})" class="text-slate-300 hover:text-red-500 p-1">&times;</button>
+    <!-- Card header: always visible, click to collapse -->
+    <div class="p-3 bg-slate-50 border-b flex items-center gap-2 cursor-pointer select-none"
+         onclick="toggleCardCollapse('${key}', ${index})">
+      <span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${tagColour} shrink-0">${tag}</span>
+      <span class="text-xs font-bold text-slate-700 flex-1 truncate">${escapeHtml(group.name || 'Unnamed bundle')}</span>
+      <svg class="w-4 h-4 text-slate-400 rotate-icon shrink-0 ${isCollapsed ? '' : 'expanded'}"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+      <button onclick="event.stopPropagation(); removePlannerGroup('${key}', ${index})"
+        class="text-slate-300 hover:text-red-500 p-0.5 shrink-0">&times;</button>
     </div>
-    <div class="p-4 space-y-4">
-      <div class="space-y-1">
-        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Bundle Name</label>
-        <input type="text" oninput="updatePlannerValue('${key}', ${index}, 'name', this.value)"
-          class="w-full text-xs font-bold border border-slate-200 bg-white rounded-lg px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          placeholder="e.g. Core Fundamentals" value="${escapeHtml(group.name || '')}">
-      </div>
-      <div class="space-y-1">
-        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Sequence Tag</label>
-        <div class="flex gap-2">
-          ${[1, 2, 3].map((n) => `
-            <button type="button"
-              onclick="updatePlannerValue('${key}', ${index}, 'sequenceTag', ${n}); this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('bg-indigo-600','text-white','border-indigo-600')); this.classList.add('bg-indigo-600','text-white','border-indigo-600')"
-              class="flex-1 text-xs font-bold border rounded-lg py-1.5 transition ${(group.sequenceTag ?? 1) === n ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}">
-              ${n}
-            </button>`).join('')}
+
+    <!-- Card body: collapsible -->
+    <div class="card-body ${isCollapsed ? '' : 'expanded'} collapse-content">
+      <div class="p-4 space-y-4">
+        <div class="space-y-1">
+          <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Bundle Name</label>
+          <input type="text"
+            oninput="updatePlannerValue('${key}', ${index}, 'name', this.value); this.closest('.bg-white').querySelector('.truncate').textContent = this.value || 'Unnamed bundle'"
+            class="w-full text-xs font-bold border border-slate-200 bg-white rounded-lg px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            placeholder="e.g. Core Fundamentals" value="${escapeHtml(group.name || '')}">
         </div>
-      </div>
-      <div class="space-y-1">
-        <label class="text-[9px] font-bold text-violet-600 uppercase tracking-wide">Aligned Competency</label>
-        <select onchange="updatePlannerValue('${key}', ${index}, 'competencyId', this.value)"
-          class="w-full text-[10px] border border-slate-200 bg-white rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-violet-500">
-          ${compOptions}
-        </select>
-      </div>
-      <div class="space-y-3 pt-2 border-t">
-        <div class="flex justify-between items-center">
-          <label class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">Know</label>
-          <button onclick="addPlannerItem('${key}', ${index}, 'knowItems')" class="text-[10px] text-indigo-500 font-bold hover:underline">+ Add Know</button>
+        <div class="space-y-1">
+          <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Sequence Tag</label>
+          <div class="flex gap-2">
+            ${[1, 2, 3].map((n) => `
+              <button type="button"
+                onclick="updatePlannerValue('${key}', ${index}, 'sequenceTag', ${n}); renderPlannerGrid()"
+                class="flex-1 text-xs font-bold border rounded-lg py-1.5 transition ${seqBtnCls(tag === n)}">
+                ${n}
+              </button>`).join('')}
+          </div>
         </div>
-        <div class="space-y-2" id="know-items-${safeId}"></div>
-      </div>
-      <div class="space-y-3 pt-2 border-t">
-        <div class="flex justify-between items-center">
-          <label class="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">Do</label>
-          <button onclick="addPlannerItem('${key}', ${index}, 'doItems')" class="text-[10px] text-indigo-500 font-bold hover:underline">+ Add Do</button>
+        <div class="space-y-1">
+          <label class="text-[9px] font-bold text-violet-600 uppercase tracking-wide">Aligned Competency</label>
+          <select onchange="updatePlannerValue('${key}', ${index}, 'competencyId', this.value)"
+            class="w-full text-[10px] border border-slate-200 bg-white rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-violet-500">
+            ${compOptions}
+          </select>
         </div>
-        <div class="space-y-2" id="do-items-${safeId}"></div>
+        <div class="space-y-3 pt-2 border-t">
+          <div class="flex justify-between items-center">
+            <label class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">Know</label>
+            <button onclick="addPlannerItem('${key}', ${index}, 'knowItems')"
+              class="text-[10px] text-indigo-500 font-bold hover:underline">+ Add Know</button>
+          </div>
+          <div class="space-y-2" id="know-items-${safeId}"></div>
+        </div>
+        <div class="space-y-3 pt-2 border-t">
+          <div class="flex justify-between items-center">
+            <label class="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">Do</label>
+            <button onclick="addPlannerItem('${key}', ${index}, 'doItems')"
+              class="text-[10px] text-indigo-500 font-bold hover:underline">+ Add Do</button>
+          </div>
+          <div class="space-y-2" id="do-items-${safeId}"></div>
+        </div>
       </div>
     </div>`;
 
   setTimeout(() => {
-    const kContainer = document.getElementById(`know-items-${safeId}`);
-    const dContainer = document.getElementById(`do-items-${safeId}`);
-    if (kContainer && dContainer) {
-      kContainer.innerHTML = '';
-      dContainer.innerHTML = '';
-      (group.knowItems || []).forEach((item, i) =>
-        kContainer.appendChild(createItemInput(key, index, 'knowItems', i, item)),
-      );
-      (group.doItems || []).forEach((item, i) =>
-        dContainer.appendChild(createItemInput(key, index, 'doItems', i, item)),
-      );
-      triggerMath();
-    }
+    populateItemContainers(key, index, group, safeId);
   }, 0);
 
   return div;
 }
 
-// ── Statement input builder ───────────────────────────────────────────────────
+window.toggleCardCollapse = (key, index) => {
+  if (!state.currentPlannerData.mappings[key]) return;
+  const g = state.currentPlannerData.mappings[key].groups[index];
+  g._collapsed = !(g._collapsed ?? false);
+  renderPlannerGrid();
+};
 
-function createItemInput(key, bundleIndex, listType, itemIndex, value) {
+// ════════════════════════════════════════════════════════════════════════════
+// GRID MODE
+// ════════════════════════════════════════════════════════════════════════════
+
+function renderGridMode(key, container) {
+  const groups = state.currentPlannerData.mappings[key].groups || [];
+
+  // Collect unique bundle names (preserving order of first appearance)
+  const bundleNames = [];
+  groups.forEach((g) => {
+    const name = g.name?.trim() || '';
+    if (name && !bundleNames.includes(name)) bundleNames.push(name);
+    else if (!name) {
+      // unnamed bundles get a placeholder so they still appear
+      const placeholder = `__unnamed_${groups.indexOf(g)}`;
+      bundleNames.push(placeholder);
+    }
+  });
+
+  // For each name × seq tag, find the matching group (first match wins)
+  const SEQ = [1, 2, 3];
+
+  const seqHeaderCls = [
+    'bg-indigo-50 text-indigo-700',
+    'bg-amber-50 text-amber-700',
+    'bg-emerald-50 text-emerald-700',
+  ];
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'space-y-4';
+
+  // ── Add-bundle row ──
+  const addRow = document.createElement('div');
+  addRow.className = 'flex items-center gap-3';
+  addRow.innerHTML = `
+    <input id="grid-new-bundle-name" type="text" placeholder="New bundle name…"
+      class="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 w-64">
+    <button onclick="addGridBundle('${key}')"
+      class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition">
+      + Add Bundle
+    </button>`;
+  wrapper.appendChild(addRow);
+
+  if (bundleNames.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'text-sm text-slate-400 italic py-8 text-center';
+    empty.textContent = 'No bundles yet. Add one above.';
+    wrapper.appendChild(empty);
+    container.appendChild(wrapper);
+    return;
+  }
+
+  // ── Table ──
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'overflow-x-auto rounded-xl border border-slate-200 shadow-sm';
+
+  let html = `<table class="w-full text-left table-fixed border-collapse">
+    <thead>
+      <tr class="border-b bg-slate-50">
+        <th class="p-3 text-xs font-bold text-slate-600 uppercase w-44">Bundle</th>
+        ${SEQ.map((n, i) => `
+          <th class="p-3 text-xs font-bold uppercase ${seqHeaderCls[i]}">
+            <span class="flex items-center gap-1.5">
+              <span class="w-4 h-4 rounded border text-[9px] font-black inline-flex items-center justify-center ${seqHeaderCls[i]} border-current">${n}</span>
+              Sequence ${n}
+            </span>
+          </th>`).join('')}
+        <th class="p-3 w-8"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y">`;
+
+  bundleNames.forEach((rawName) => {
+    const displayName = rawName.startsWith('__unnamed_') ? '' : rawName;
+
+    html += `<tr class="hover:bg-slate-50/50">
+      <td class="p-3 align-top border-r">
+        <input type="text"
+          value="${escapeHtml(displayName)}"
+          placeholder="Bundle name"
+          onchange="renameGridBundle('${key}', '${escapeHtml(rawName)}', this.value)"
+          class="w-full text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500">
+      </td>`;
+
+    SEQ.forEach((seqTag) => {
+      // Find the group that matches this name+seqTag, or null
+      const gIdx = groups.findIndex(
+        (g) => (g.name?.trim() || '') === (rawName.startsWith('__unnamed_') ? '' : rawName)
+             && (g.sequenceTag ?? 1) === seqTag,
+      );
+      const g = gIdx >= 0 ? groups[gIdx] : null;
+      const safeId = g ? getSafeId(key, gIdx) : null;
+
+      html += `<td class="p-3 align-top border-r min-w-[180px]">`;
+
+      if (g) {
+        // Competency select
+        const compOptions = '<option value="">— No Competency —</option>' +
+          state.competencyData.map((c) =>
+            `<option value="${c.id}" ${g.competencyId === c.id ? 'selected' : ''}>${escapeHtml(c.title)}</option>`
+          ).join('');
+
+        html += `
+          <div class="space-y-2" id="grid-cell-${safeId}">
+            <select onchange="updatePlannerValue('${key}', ${gIdx}, 'competencyId', this.value)"
+              class="w-full text-[9px] border border-slate-200 bg-white rounded px-1.5 py-1 focus:ring-1 focus:ring-violet-500 mb-1">
+              ${compOptions}
+            </select>
+            <div class="space-y-1">
+              <span class="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Know</span>
+              <div id="grid-know-${safeId}" class="space-y-1"></div>
+              <button onclick="addPlannerItem('${key}', ${gIdx}, 'knowItems')"
+                class="text-[9px] text-indigo-400 font-bold hover:underline">+ Know</button>
+            </div>
+            <div class="space-y-1 pt-1 border-t border-slate-100">
+              <span class="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Do</span>
+              <div id="grid-do-${safeId}" class="space-y-1"></div>
+              <button onclick="addPlannerItem('${key}', ${gIdx}, 'doItems')"
+                class="text-[9px] text-emerald-500 font-bold hover:underline">+ Do</button>
+            </div>
+          </div>`;
+      } else {
+        // Empty cell — clicking creates the group
+        html += `
+          <button onclick="addGridCell('${key}', '${escapeHtml(rawName.startsWith('__unnamed_') ? '' : rawName)}', ${seqTag})"
+            class="w-full h-full min-h-[60px] rounded-lg border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition text-[10px] text-slate-400 hover:text-indigo-500 font-bold flex items-center justify-center">
+            + Add
+          </button>`;
+      }
+
+      html += `</td>`;
+    });
+
+    // Row delete (removes all groups with this bundle name)
+    html += `
+      <td class="p-2 align-top text-center">
+        <button onclick="removeGridBundleRow('${key}', '${escapeHtml(rawName)}')"
+          class="text-slate-300 hover:text-red-500 font-bold text-sm">&times;</button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  tableWrap.innerHTML = html;
+  wrapper.appendChild(tableWrap);
+  container.appendChild(wrapper);
+
+  // Populate statement inputs after DOM is ready
+  setTimeout(() => {
+    bundleNames.forEach((rawName) => {
+      SEQ.forEach((seqTag) => {
+        const gIdx = groups.findIndex(
+          (g) => (g.name?.trim() || '') === (rawName.startsWith('__unnamed_') ? '' : rawName)
+               && (g.sequenceTag ?? 1) === seqTag,
+        );
+        if (gIdx < 0) return;
+        const g      = groups[gIdx];
+        const safeId = getSafeId(key, gIdx);
+        const kEl    = document.getElementById(`grid-know-${safeId}`);
+        const dEl    = document.getElementById(`grid-do-${safeId}`);
+        if (kEl) {
+          kEl.innerHTML = '';
+          (g.knowItems || []).forEach((item, i) =>
+            kEl.appendChild(createItemInput(key, gIdx, 'knowItems', i, item, true)));
+        }
+        if (dEl) {
+          dEl.innerHTML = '';
+          (g.doItems || []).forEach((item, i) =>
+            dEl.appendChild(createItemInput(key, gIdx, 'doItems', i, item, true)));
+        }
+      });
+    });
+    triggerMath();
+  }, 0);
+}
+
+// ── Grid-mode bundle operations ───────────────────────────────────────────────
+
+window.addGridBundle = (key) => {
+  const nameEl = document.getElementById('grid-new-bundle-name');
+  const name   = nameEl?.value?.trim() || '';
+  if (!state.currentPlannerData.mappings[key]) return;
+  // Add a single group for seq 1 as the starter
+  state.currentPlannerData.mappings[key].groups.push({
+    sequence:    state.currentPlannerData.mappings[key].groups.length + 1,
+    name,
+    knowItems:   [''],
+    doItems:     [''],
+    competencyId: '',
+    sequenceTag:  1,
+  });
+  if (nameEl) nameEl.value = '';
+  renderPlannerGrid();
+  savePlannerState();
+};
+
+window.addGridCell = (key, bundleName, seqTag) => {
+  if (!state.currentPlannerData.mappings[key]) return;
+  state.currentPlannerData.mappings[key].groups.push({
+    sequence:    state.currentPlannerData.mappings[key].groups.length + 1,
+    name:        bundleName,
+    knowItems:   [''],
+    doItems:     [''],
+    competencyId: '',
+    sequenceTag:  seqTag,
+  });
+  renderPlannerGrid();
+  savePlannerState();
+};
+
+window.renameGridBundle = (key, oldName, newName) => {
+  if (!state.currentPlannerData.mappings[key]) return;
+  const actualOld = oldName.startsWith('__unnamed_') ? '' : oldName;
+  state.currentPlannerData.mappings[key].groups.forEach((g) => {
+    if ((g.name?.trim() || '') === actualOld) g.name = newName;
+  });
+  renderPlannerGrid();
+  savePlannerState();
+};
+
+window.removeGridBundleRow = (key, rawName) => {
+  if (!confirm('Remove all bundles in this row?')) return;
+  const actualName = rawName.startsWith('__unnamed_') ? '' : rawName;
+  state.currentPlannerData.mappings[key].groups =
+    state.currentPlannerData.mappings[key].groups.filter(
+      (g) => (g.name?.trim() || '') !== actualName,
+    );
+  renderPlannerGrid();
+  savePlannerState();
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// SHARED HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+
+function populateItemContainers(key, index, group, safeId) {
+  const kContainer = document.getElementById(`know-items-${safeId}`);
+  const dContainer = document.getElementById(`do-items-${safeId}`);
+  if (kContainer && dContainer) {
+    kContainer.innerHTML = '';
+    dContainer.innerHTML = '';
+    (group.knowItems || []).forEach((item, i) =>
+      kContainer.appendChild(createItemInput(key, index, 'knowItems', i, item)));
+    (group.doItems || []).forEach((item, i) =>
+      dContainer.appendChild(createItemInput(key, index, 'doItems', i, item)));
+    triggerMath();
+  }
+}
+
+function createItemInput(key, bundleIndex, listType, itemIndex, value, compact = false) {
   const safeId    = getSafeId(key, bundleIndex);
   const previewId = `preview-${safeId}-${listType}-${itemIndex}`;
   const div = document.createElement('div');
-  div.className =
-    'group/item bg-slate-50 border border-slate-100 rounded-lg p-2 transition hover:bg-white hover:border-slate-200 hover:shadow-sm';
-  div.innerHTML = `
-    <div class="flex items-center space-x-2">
+  div.className = compact
+    ? 'group/item flex items-start gap-1'
+    : 'group/item bg-slate-50 border border-slate-100 rounded-lg p-2 transition hover:bg-white hover:border-slate-200 hover:shadow-sm';
+
+  if (compact) {
+    div.innerHTML = `
       <textarea
         onblur="cleanupEmptyItems('${key}', ${bundleIndex}, '${listType}')"
         oninput="updatePlannerItemValue('${key}', ${bundleIndex}, '${listType}', ${itemIndex}, this.value, '${previewId}')"
-        class="flex-1 text-[11px] bg-transparent border-none focus:ring-0 p-0 resize-none min-h-[1.5rem]"
-        placeholder="Type statement..." rows="1">${escapeHtml(value)}</textarea>
+        class="flex-1 text-[10px] bg-transparent border border-slate-100 rounded p-1 focus:ring-1 focus:ring-indigo-400 resize-none min-h-[1.4rem]"
+        placeholder="Statement…" rows="1">${escapeHtml(value)}</textarea>
       <button onclick="removePlannerItem('${key}', ${bundleIndex}, '${listType}', ${itemIndex})"
-        class="text-slate-300 hover:text-red-500 text-xs opacity-0 group-hover/item:opacity-100 transition-opacity">&times;</button>
-    </div>
-    <div class="math-preview hidden" id="${previewId}"></div>`;
+        class="text-slate-300 hover:text-red-500 text-xs opacity-0 group-hover/item:opacity-100 mt-0.5">&times;</button>`;
+  } else {
+    div.innerHTML = `
+      <div class="flex items-center space-x-2">
+        <textarea
+          onblur="cleanupEmptyItems('${key}', ${bundleIndex}, '${listType}')"
+          oninput="updatePlannerItemValue('${key}', ${bundleIndex}, '${listType}', ${itemIndex}, this.value, '${previewId}')"
+          class="flex-1 text-[11px] bg-transparent border-none focus:ring-0 p-0 resize-none min-h-[1.5rem]"
+          placeholder="Type statement..." rows="1">${escapeHtml(value)}</textarea>
+        <button onclick="removePlannerItem('${key}', ${bundleIndex}, '${listType}', ${itemIndex})"
+          class="text-slate-300 hover:text-red-500 text-xs opacity-0 group-hover/item:opacity-100 transition-opacity">&times;</button>
+      </div>
+      <div class="math-preview hidden" id="${previewId}"></div>`;
+  }
   return div;
 }
 
-// ── Planner mutation helpers (exposed to window for inline handlers) ───────────
+// ── Mutation helpers ──────────────────────────────────────────────────────────
 
 window.cleanupEmptyItems = (key, bundleIndex, listType) => {
   if (!state.currentPlannerData.mappings[key]) return;
@@ -261,10 +566,10 @@ window.addPlannerGroup = (key) => {
     state.currentPlannerData.mappings[key] = { groups: [] };
   }
   state.currentPlannerData.mappings[key].groups.push({
-    sequence:    state.currentPlannerData.mappings[key].groups.length + 1,
-    name:        '',
-    knowItems:   [''],
-    doItems:     [''],
+    sequence:     state.currentPlannerData.mappings[key].groups.length + 1,
+    name:         '',
+    knowItems:    [''],
+    doItems:      [''],
     competencyId: '',
     sequenceTag:  1,
   });
@@ -287,8 +592,6 @@ async function savePlannerState() {
   const planDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'planningMaps', areaId);
   try {
     await setDoc(planDocRef, state.currentPlannerData, { merge: true });
-    // Keep allPlanningData in sync immediately so the matrix and overview
-    // reflect changes without waiting for the collection snapshot round-trip.
     state.allPlanningData[areaId] = state.currentPlannerData;
   } catch (e) {
     console.error(e);
