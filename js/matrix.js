@@ -1,27 +1,37 @@
 /**
  * matrix.js
- * Two matrix view modes:
- *   conceptual  – concept rows with level-description cells, then organiser
- *                 sub-rows showing bundles (original view)
- *   knowdo      – concept rows only; cells contain Know & Do bundles grouped
- *                 by organiser when "All Organisers" is selected
+ * Two view modes × two orientations:
  *
- * Bundles are always sorted numerically by sequenceTag.
- * Sequence badge is suppressed when every bundle in a cell is tagged 1.
+ *  Mode         | Normal (concepts as rows)          | Transposed (levels as rows)
+ *  -------------|------------------------------------|---------------------------------
+ *  conceptual   | concept row + desc + org sub-rows  | level row + desc + org sub-rows
+ *  knowdo       | concept rows with bundle cells     | level rows with bundle cells
+ *
+ * Bundles are always sorted by sequenceTag then name.
+ * Sequence badge suppressed when every bundle in a cell is tagged 1.
+ * Linked bundles highlighted in teal.
  */
 
 import { state, escapeHtml, triggerMath, LEVELS, levelByKey } from './state.js';
 
 // ── Module state ──────────────────────────────────────────────────────────────
 
-let matrixViewMode = 'conceptual'; // 'conceptual' | 'knowdo'
+let matrixViewMode  = 'conceptual'; // 'conceptual' | 'knowdo'
+let matrixTransposed = false;        // false = concepts as rows, true = levels as rows
 
-// ── View mode toggle ──────────────────────────────────────────────────────────
+// ── Mode / orientation toggles ────────────────────────────────────────────────
 
 window.setMatrixViewMode = (mode) => {
   matrixViewMode = mode;
   document.getElementById('matrix-mode-conceptual').classList.toggle('active-mode', mode === 'conceptual');
   document.getElementById('matrix-mode-knowdo').classList.toggle('active-mode', mode === 'knowdo');
+  renderMatrix();
+};
+
+window.setMatrixTransposed = (transposed) => {
+  matrixTransposed = transposed;
+  document.getElementById('matrix-orient-normal').classList.toggle('active-mode', !transposed);
+  document.getElementById('matrix-orient-transposed').classList.toggle('active-mode', transposed);
   renderMatrix();
 };
 
@@ -37,9 +47,7 @@ function seqColour(tag) {
 
 export function buildBundleHtml(g, showSeqBadge = true) {
   const isLinked = !!g.linkedFrom;
-
-  // For linked bundles, read content from the source
-  const display = isLinked ? resolveLinkedGroupForMatrix(g) ?? g : g;
+  const display  = isLinked ? resolveLinkedGroupForMatrix(g) ?? g : g;
 
   const comp    = state.competencyData.find((c) => c.id === (display.competencyId || g.competencyId));
   const tag     = g.sequenceTag ?? 1;
@@ -58,9 +66,7 @@ export function buildBundleHtml(g, showSeqBadge = true) {
     <div class="w-full border rounded-lg overflow-hidden bundle-card ${isLinked ? 'border-teal-300 ring-1 ring-teal-100' : 'border-slate-200'}">
       <button type="button" onclick="toggleBundle(this)"
         class="w-full flex items-start gap-2 px-3 py-2 ${isLinked ? 'bg-teal-50 hover:bg-teal-100' : 'bg-slate-50 hover:bg-slate-100'} transition text-left">
-        ${showSeqBadge
-          ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${colCls} shrink-0 mt-0.5">${tag}</span>`
-          : ''}
+        ${showSeqBadge ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${colCls} shrink-0 mt-0.5">${tag}</span>` : ''}
         <span class="text-[11px] font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(display.name || g.name || 'Unnamed bundle')}</span>
         ${linkedBadge}
         ${hasBody ? `<svg class="w-3.5 h-3.5 text-slate-400 rotate-icon shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>` : ''}
@@ -74,20 +80,8 @@ export function buildBundleHtml(g, showSeqBadge = true) {
               ${escapeHtml(getAreaTitle(g.linkedFrom.areaId))} — ${escapeHtml(g.linkedFrom.conceptTitle)}
             </div>` : ''}
           ${comp ? `<button onclick="showCompInfo('${comp.id}')" class="text-[8px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100 uppercase hover:bg-violet-100 transition">${escapeHtml(comp.title)}</button>` : ''}
-          ${hasKnow ? `
-          <div>
-            <span class="text-[8px] font-bold text-indigo-400 uppercase tracking-tighter block mb-1">Know:</span>
-            <ul class="list-disc list-outside ml-3 text-[10px] text-slate-700 space-y-1">
-              ${display.knowItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}
-            </ul>
-          </div>` : ''}
-          ${hasDo ? `
-          <div>
-            <span class="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter block mb-1">Do:</span>
-            <ul class="list-disc list-outside ml-3 text-[10px] text-slate-700 font-medium space-y-1">
-              ${display.doItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}
-            </ul>
-          </div>` : ''}
+          ${hasKnow ? `<div><span class="text-[8px] font-bold text-indigo-400 uppercase tracking-tighter block mb-1">Know:</span><ul class="list-disc list-outside ml-3 text-[10px] text-slate-700 space-y-1">${display.knowItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}</ul></div>` : ''}
+          ${hasDo   ? `<div><span class="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter block mb-1">Do:</span><ul class="list-disc list-outside ml-3 text-[10px] text-slate-700 font-medium space-y-1">${display.doItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}</ul></div>` : ''}
         </div>
       </div>` : ''}
     </div>`;
@@ -98,8 +92,7 @@ function resolveLinkedGroupForMatrix(group) {
   const { areaId, conceptTitle, organiserName, level, bundleIndex } = group.linkedFrom;
   const planning = state.allPlanningData[areaId];
   if (!planning?.mappings) return null;
-  const key = `${conceptTitle}_${organiserName}_L${level}`;
-  return planning.mappings[key]?.groups?.[bundleIndex] ?? null;
+  return planning.mappings[`${conceptTitle}_${organiserName}_L${level}`]?.groups?.[bundleIndex] ?? null;
 }
 
 function getAreaTitle(areaId) {
@@ -128,17 +121,11 @@ export function updateMatrixFilters() {
   const area = state.curriculumData.find((a) => a.id === areaId);
   if (!area) return;
 
-  // Organiser dropdown
   oSelect.innerHTML =
     '<option value="">All Organisers</option>' +
-    (area.organisers || [])
-      .map((o) => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`)
-      .join('');
+    (area.organisers || []).map((o) => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join('');
 
-  // Concept checkboxes — preserve previous selections where names still exist
-  const prev = new Set(
-    Array.from(document.querySelectorAll('.matrix-concept-cb:checked')).map((cb) => cb.value)
-  );
+  const prev = new Set(Array.from(document.querySelectorAll('.matrix-concept-cb:checked')).map((cb) => cb.value));
   cList.innerHTML = (area.concepts || []).map((c) => `
     <label class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-indigo-400 transition text-xs font-medium text-slate-700 select-none">
       <input type="checkbox" class="matrix-concept-cb rounded text-indigo-600"
@@ -152,15 +139,13 @@ export function updateMatrixFilters() {
   renderMatrix();
 }
 
-// ── Shared guard / setup ──────────────────────────────────────────────────────
+// ── Shared context builder ────────────────────────────────────────────────────
 
 function getMatrixContext() {
   const areaId  = document.getElementById('matrix-area-select').value;
   const oFilter = document.getElementById('matrix-organiser-select').value;
   const levels  = Array.from(document.querySelectorAll('.matrix-level-cb:checked')).map((cb) => cb.value);
-  const selectedConcepts = new Set(
-    Array.from(document.querySelectorAll('.matrix-concept-cb:checked')).map((cb) => cb.value)
-  );
+  const selectedConcepts = new Set(Array.from(document.querySelectorAll('.matrix-concept-cb:checked')).map((cb) => cb.value));
   const container = document.getElementById('matrix-container');
 
   if (!areaId) {
@@ -176,8 +161,6 @@ function getMatrixContext() {
   const orgs = oFilter
     ? [area.organisers.find((o) => o.name === oFilter)].filter(Boolean)
     : (area.organisers || []);
-
-  // Filter concepts — if none checked, show all
   const concepts = selectedConcepts.size > 0
     ? (area.concepts || []).filter((c) => selectedConcepts.has(c.title))
     : (area.concepts || []);
@@ -185,27 +168,250 @@ function getMatrixContext() {
   return { area, concepts, planning, orgs, oFilter, levels, container };
 }
 
-// ── Helper: sort and render a list of bundles into HTML ───────────────────────
+// ── Bundle cell helper ────────────────────────────────────────────────────────
 
 function bundleCellHtml(groups) {
   const sorted = [...(groups || [])].sort((a, b) => {
-    const seqDiff = (a.sequenceTag ?? 1) - (b.sequenceTag ?? 1);
-    if (seqDiff !== 0) return seqDiff;
-    return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
+    const d = (a.sequenceTag ?? 1) - (b.sequenceTag ?? 1);
+    return d !== 0 ? d : (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
   });
   const allOne = sorted.every((g) => (g.sequenceTag ?? 1) === 1);
   return sorted.map((g) => buildBundleHtml(g, !allOne)).join('');
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// CONCEPTUAL VIEW
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Reusable cell renderers ───────────────────────────────────────────────────
 
-function renderConceptualMatrix(ctx) {
-  const { concepts, planning, orgs, levels, container } = ctx; // concepts already filtered
+/** Returns a <td> with the concept-level description, or a "not applicable" cell. */
+function descCell(concept, l, extraCls = '') {
+  const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv) => lv.key));
+  if (!applicable.has(l)) {
+    return `<td class="p-3 align-top border-r border-slate-200 last:border-r-0 bg-slate-50/50 ${extraCls}"><span class="text-[9px] text-slate-300 italic">Not applicable</span></td>`;
+  }
+  return `<td class="p-3 align-top border-r border-slate-200 last:border-r-0 ${extraCls}"><p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(concept.levels[l]) || '<span class="text-slate-300 italic">—</span>'}</p></td>`;
+}
 
-  // ── Collapse/expand all toolbar ───────────────────────────────────────────
-  const toolbar = `
+/** Returns a <td> with sorted bundles for a concept × organiser × level cell. */
+function bundleCell(concept, org, l, planning, extraCls = '') {
+  const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv) => lv.key));
+  if (!applicable.has(l)) {
+    return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 bg-slate-50/30 ${extraCls}"></td>`;
+  }
+  const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
+  return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 ${extraCls}"><div class="space-y-2">${bundleCellHtml(m.groups)}</div></td>`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CONCEPTUAL — NORMAL  (rows = concepts, cols = levels)
+// ════════════════════════════════════════════════════════════════════════════
+
+function renderConceptualNormal(ctx) {
+  const { concepts, planning, orgs, levels, container } = ctx;
+
+  const toolbar = collapseToolbar();
+
+  let html = `<table class="w-full text-left matrix-table table-fixed border-collapse">
+    <thead><tr>
+      <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-44">Concept</th>
+      ${levels.map((l) => `<th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 last:border-r-0">${levelByKey(l).label}</th>`).join('')}
+    </tr></thead>
+    <tbody>`;
+
+  concepts.forEach((concept, cIdx) => {
+    const collapseId = `concept-rows-${cIdx}`;
+    html += `
+      <tr class="border-t-2 border-indigo-200 bg-indigo-50/30">
+        <td class="p-3 align-top border-r border-slate-200">
+          <button onclick="toggleConceptRows('${collapseId}', this)" class="flex items-start gap-2 w-full text-left">
+            <svg class="w-4 h-4 text-indigo-400 rotate-icon expanded shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            <span class="font-black text-slate-800 text-sm uppercase tracking-tight leading-snug">${escapeHtml(concept.title)}</span>
+          </button>
+        </td>
+        ${levels.map((l) => descCell(concept, l)).join('')}
+      </tr>`;
+
+    orgs.forEach((org) => {
+      html += `
+        <tr class="concept-collapsible-row border-t border-slate-100 hover:bg-slate-50/40" data-collapse-id="${collapseId}">
+          <td class="p-3 pl-8 align-top border-r border-slate-100 bg-slate-50/60"><span class="text-xs font-semibold text-slate-500">${escapeHtml(org.name)}</span></td>
+          ${levels.map((l) => bundleCell(concept, org, l, planning)).join('')}
+        </tr>`;
+    });
+  });
+
+  container.innerHTML = toolbar + html + '</tbody></table>';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CONCEPTUAL — TRANSPOSED  (rows = levels, cols = concepts)
+// ════════════════════════════════════════════════════════════════════════════
+
+function renderConceptualTransposed(ctx) {
+  const { concepts, planning, orgs, levels, container } = ctx;
+
+  const toolbar = collapseToolbar();
+
+  let html = `<table class="w-full text-left matrix-table table-fixed border-collapse">
+    <thead><tr>
+      <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-36">Level</th>
+      ${concepts.map((c) => `<th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 last:border-r-0">${escapeHtml(c.title)}</th>`).join('')}
+    </tr></thead>
+    <tbody>`;
+
+  levels.forEach((l, lIdx) => {
+    const collapseId = `level-rows-${lIdx}`;
+    const lv = levelByKey(l);
+
+    // Level header row — always visible, contains the level description per concept
+    html += `
+      <tr class="border-t-2 border-indigo-200 bg-indigo-50/30">
+        <td class="p-3 align-top border-r border-slate-200">
+          <button onclick="toggleConceptRows('${collapseId}', this)" class="flex items-start gap-2 w-full text-left">
+            <svg class="w-4 h-4 text-indigo-400 rotate-icon expanded shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            <span class="font-black text-slate-800 text-sm uppercase tracking-tight leading-snug">${lv.label}</span>
+          </button>
+        </td>
+        ${concepts.map((concept) => descCell(concept, l)).join('')}
+      </tr>`;
+
+    // Organiser sub-rows — collapsible
+    orgs.forEach((org) => {
+      html += `
+        <tr class="concept-collapsible-row border-t border-slate-100 hover:bg-slate-50/40" data-collapse-id="${collapseId}">
+          <td class="p-3 pl-8 align-top border-r border-slate-100 bg-slate-50/60"><span class="text-xs font-semibold text-slate-500">${escapeHtml(org.name)}</span></td>
+          ${concepts.map((concept) => bundleCell(concept, org, l, planning)).join('')}
+        </tr>`;
+    });
+  });
+
+  container.innerHTML = toolbar + html + '</tbody></table>';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// KNOW & DO — NORMAL  (rows = concepts, cols = levels)
+// ════════════════════════════════════════════════════════════════════════════
+
+function renderKnowDoNormal(ctx) {
+  const { concepts, planning, orgs, oFilter, levels, container } = ctx;
+  const allOrgs = !oFilter;
+
+  let html = `<table class="w-full text-left matrix-table table-fixed border-collapse">
+    <thead><tr>
+      <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-44">${allOrgs ? 'Concept / Organiser' : 'Concept'}</th>
+      ${levels.map((l) => `<th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 last:border-r-0">${levelByKey(l).label}</th>`).join('')}
+    </tr></thead>
+    <tbody class="divide-y">`;
+
+  concepts.forEach((concept) => {
+    const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv) => lv.key));
+
+    if (allOrgs) {
+      html += `<tr class="bg-indigo-50/30">
+        <td colspan="${levels.length + 1}" class="px-4 py-2 font-black text-slate-800 text-sm uppercase border-b border-indigo-100">${escapeHtml(concept.title)}</td>
+      </tr>`;
+      orgs.forEach((org) => {
+        const hasAny = levels.some((l) => {
+          if (!applicable.has(l)) return false;
+          const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
+          return (m.groups || []).some((g) => hasContent(g));
+        });
+        if (!hasAny) return;
+        html += `<tr>
+          <td class="p-3 pl-8 align-top border-r bg-slate-50 text-xs font-bold text-slate-600">${escapeHtml(org.name)}</td>
+          ${levels.map((l) => {
+            if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"></td>`;
+            const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
+            return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups) || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
+          }).join('')}
+        </tr>`;
+      });
+    } else {
+      const org = orgs[0];
+      const hasAny = levels.some((l) => {
+        if (!applicable.has(l)) return false;
+        const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
+        return (m.groups || []).some((g) => hasContent(g));
+      });
+      html += `<tr class="${hasAny ? '' : 'opacity-40'}">
+        <td class="p-4 align-top border-r bg-white font-black text-slate-900 text-sm uppercase">${escapeHtml(concept.title)}</td>
+        ${levels.map((l) => {
+          if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"><span class="text-[9px] text-slate-300 italic">Not applicable</span></td>`;
+          const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
+          return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups) || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
+        }).join('')}
+      </tr>`;
+    }
+  });
+
+  container.innerHTML = html + '</tbody></table>';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// KNOW & DO — TRANSPOSED  (rows = levels, cols = concepts)
+// ════════════════════════════════════════════════════════════════════════════
+
+function renderKnowDoTransposed(ctx) {
+  const { concepts, planning, orgs, oFilter, levels, container } = ctx;
+  const allOrgs = !oFilter;
+
+  let html = `<table class="w-full text-left matrix-table table-fixed border-collapse">
+    <thead><tr>
+      <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-36">${allOrgs ? 'Level / Organiser' : 'Level'}</th>
+      ${concepts.map((c) => `<th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 last:border-r-0">${escapeHtml(c.title)}</th>`).join('')}
+    </tr></thead>
+    <tbody class="divide-y">`;
+
+  levels.forEach((l) => {
+    const lv = levelByKey(l);
+
+    if (allOrgs) {
+      html += `<tr class="bg-indigo-50/30">
+        <td colspan="${concepts.length + 1}" class="px-4 py-2 font-black text-slate-800 text-sm uppercase border-b border-indigo-100">${lv.label}</td>
+      </tr>`;
+      orgs.forEach((org) => {
+        const hasAny = concepts.some((concept) => {
+          const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv2) => lv2.key));
+          if (!applicable.has(l)) return false;
+          const m = planning.mappings[`${concept.title}_${org.name}_L${lv.plannerNum}`] || { groups: [] };
+          return (m.groups || []).some((g) => hasContent(g));
+        });
+        if (!hasAny) return;
+        html += `<tr>
+          <td class="p-3 pl-8 align-top border-r bg-slate-50 text-xs font-bold text-slate-600">${escapeHtml(org.name)}</td>
+          ${concepts.map((concept) => {
+            const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv2) => lv2.key));
+            if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"></td>`;
+            const m = planning.mappings[`${concept.title}_${org.name}_L${lv.plannerNum}`] || { groups: [] };
+            return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups) || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
+          }).join('')}
+        </tr>`;
+      });
+    } else {
+      const org = orgs[0];
+      const hasAny = concepts.some((concept) => {
+        const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv2) => lv2.key));
+        if (!applicable.has(l)) return false;
+        const m = planning.mappings[`${concept.title}_${org.name}_L${lv.plannerNum}`] || { groups: [] };
+        return (m.groups || []).some((g) => hasContent(g));
+      });
+      html += `<tr class="${hasAny ? '' : 'opacity-40'}">
+        <td class="p-4 align-top border-r bg-white font-black text-slate-900 text-sm uppercase">${lv.label}</td>
+        ${concepts.map((concept) => {
+          const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv2) => lv2.key));
+          if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"><span class="text-[9px] text-slate-300 italic">Not applicable</span></td>`;
+          const m = planning.mappings[`${concept.title}_${org.name}_L${lv.plannerNum}`] || { groups: [] };
+          return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups) || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
+        }).join('')}
+      </tr>`;
+    }
+  });
+
+  container.innerHTML = html + '</tbody></table>';
+}
+
+// ── Collapse toolbar (only used in conceptual views) ──────────────────────────
+
+function collapseToolbar() {
+  return `
     <div class="flex items-center justify-end px-3 py-2 border-b border-slate-200 bg-slate-50/60">
       <button onclick="toggleAllConceptRows(true)"
         class="text-[11px] font-semibold text-slate-500 hover:text-slate-700 px-2.5 py-1 rounded hover:bg-slate-100 transition flex items-center gap-1.5">
@@ -219,68 +425,9 @@ function renderConceptualMatrix(ctx) {
         Collapse all
       </button>
     </div>`;
-
-  let html = `
-    <table class="w-full text-left matrix-table table-fixed border-collapse">
-      <thead>
-        <tr>
-          <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-44">Concept</th>
-          ${levels.map((l) => `
-            <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 last:border-r-0">
-              ${levelByKey(l).label}
-            </th>`).join('')}
-        </tr>
-      </thead>
-      <tbody>`;
-
-  concepts.forEach((concept, cIdx) => {
-    const collapseId   = `concept-rows-${cIdx}`;
-    const applicable   = new Set(concept.applicableLevels ?? LEVELS.map(lv=>lv.key));
-
-    // ── Concept row: name in col 1, level descriptions in level cols ──────────
-    html += `
-      <tr class="border-t-2 border-indigo-200 bg-indigo-50/30">
-        <td class="p-3 align-top border-r border-slate-200">
-          <button onclick="toggleConceptRows('${collapseId}', this)"
-            class="flex items-start gap-2 w-full text-left group">
-            <svg class="w-4 h-4 text-indigo-400 rotate-icon expanded shrink-0 mt-0.5"
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-            <span class="font-black text-slate-800 text-sm uppercase tracking-tight leading-snug">${escapeHtml(concept.title)}</span>
-          </button>
-        </td>
-        ${levels.map((l) => applicable.has(l)
-          ? `<td class="p-3 align-top border-r border-slate-200 last:border-r-0">
-               <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(concept.levels[l]) || '<span class="text-slate-300 italic">—</span>'}</p>
-             </td>`
-          : `<td class="p-3 align-top border-r border-slate-200 last:border-r-0 bg-slate-50/50">
-               <span class="text-[9px] text-slate-300 italic">Not applicable</span>
-             </td>`
-        ).join('')}
-      </tr>`;
-
-    // ── Organiser rows: collapsible children ──────────────────────────────────
-    orgs.forEach((org) => {
-      html += `
-        <tr class="concept-collapsible-row border-t border-slate-100 hover:bg-slate-50/40"
-            data-collapse-id="${collapseId}">
-          <td class="p-3 pl-8 align-top border-r border-slate-100 bg-slate-50/60">
-            <span class="text-xs font-semibold text-slate-500">${escapeHtml(org.name)}</span>
-          </td>
-          ${levels.map((l) => {
-            if (!applicable.has(l)) {
-              return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 bg-slate-50/30"></td>`;
-            }
-            const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-            return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0"><div class="space-y-2">${bundleCellHtml(m.groups)}</div></td>`;
-          }).join('')}
-        </tr>`;
-    });
-  });
-
-  container.innerHTML = toolbar + html + '</tbody></table>';
 }
+
+// ── Collapse toggle handlers ──────────────────────────────────────────────────
 
 window.toggleConceptRows = (collapseId, btn) => {
   const rows = document.querySelectorAll(`.concept-collapsible-row[data-collapse-id="${collapseId}"]`);
@@ -291,91 +438,16 @@ window.toggleConceptRows = (collapseId, btn) => {
 };
 
 window.toggleAllConceptRows = (expand) => {
-  const allRows = document.querySelectorAll('.concept-collapsible-row');
-  allRows.forEach((r) => { r.style.display = expand ? '' : 'none'; });
+  document.querySelectorAll('.concept-collapsible-row').forEach((r) => { r.style.display = expand ? '' : 'none'; });
   document.querySelectorAll('#matrix-container .rotate-icon').forEach((icon) => {
     icon.classList.toggle('expanded', expand);
   });
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// KNOW & DO VIEW
-// ══════════════════════════════════════════════════════════════════════════════
-
-function renderKnowDoMatrix(ctx) {
-  const { concepts, planning, orgs, oFilter, levels, container } = ctx;
-  const allOrgs = !oFilter; // true when "All Organisers" is selected
-
-  let html = `
-    <table class="w-full text-left matrix-table table-fixed">
-      <thead>
-        <tr class="bg-slate-100 border-b">
-          <th class="p-4 text-xs font-bold text-slate-600 uppercase w-48">Concept${allOrgs ? ' / Organiser' : ''}</th>
-          ${levels.map((l) => `<th class="p-4 text-xs font-bold text-slate-600 uppercase">${levelByKey(l).label}</th>`).join('')}
-        </tr>
-      </thead>
-      <tbody class="divide-y">`;
-
-  concepts.forEach((concept) => {
-    const applicable = new Set(concept.applicableLevels ?? LEVELS.map(lv=>lv.key));
-
-    if (allOrgs) {
-      html += `
-        <tr class="bg-indigo-50/30">
-          <td colspan="${levels.length + 1}" class="px-4 py-2 font-black text-slate-800 text-sm uppercase border-b border-indigo-100">
-            ${escapeHtml(concept.title)}
-          </td>
-        </tr>`;
-
-      orgs.forEach((org) => {
-        const hasAny = levels.some((l) => {
-          if (!applicable.has(l)) return false;
-          const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-          return (m.groups || []).some((g) => hasContent(g));
-        });
-        if (!hasAny) return;
-
-        html += `
-          <tr>
-            <td class="p-3 pl-8 align-top border-r bg-slate-50 text-xs font-bold text-slate-600">${escapeHtml(org.name)}</td>
-            ${levels.map((l) => {
-              if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"></td>`;
-              const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-              const bundles = bundleCellHtml(m.groups);
-              return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundles || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
-            }).join('')}
-          </tr>`;
-      });
-
-    } else {
-      const org = orgs[0];
-      const hasAny = levels.some((l) => {
-        if (!applicable.has(l)) return false;
-        const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-        return (m.groups || []).some((g) => hasContent(g));
-      });
-
-      html += `
-        <tr class="${hasAny ? '' : 'opacity-40'}">
-          <td class="p-4 align-top border-r bg-white font-black text-slate-900 text-sm uppercase">${escapeHtml(concept.title)}</td>
-          ${levels.map((l) => {
-            if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"><span class="text-[9px] text-slate-300 italic">Not applicable</span></td>`;
-            const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-            const bundles = bundleCellHtml(m.groups);
-            return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundles || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
-          }).join('')}
-        </tr>`;
-    }
-  });
-
-  container.innerHTML = html + '</tbody></table>';
-}
-
-// ── Utility: does a bundle have any displayable content? ──────────────────────
+// ── Utility ───────────────────────────────────────────────────────────────────
 
 function hasContent(g) {
-  return (g.knowItems || []).some((k) => k.trim())
-      || (g.doItems   || []).some((d) => d.trim());
+  return (g.knowItems || []).some((k) => k.trim()) || (g.doItems || []).some((d) => d.trim());
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────────
@@ -385,9 +457,9 @@ export function renderMatrix() {
   if (!ctx) return;
 
   if (matrixViewMode === 'knowdo') {
-    renderKnowDoMatrix(ctx);
+    matrixTransposed ? renderKnowDoTransposed(ctx) : renderKnowDoNormal(ctx);
   } else {
-    renderConceptualMatrix(ctx);
+    matrixTransposed ? renderConceptualTransposed(ctx) : renderConceptualNormal(ctx);
   }
 
   triggerMath();
