@@ -190,18 +190,70 @@ function descCell(concept, l, extraCls = '') {
   return `<td class="p-3 align-top border-r border-slate-200 last:border-r-0 ${extraCls}"><p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(concept.levels[l]) || '<span class="text-slate-300 italic">—</span>'}</p></td>`;
 }
 
-/** Returns a <td> with sorted bundles for a concept × organiser × level cell. */
+/** Returns a <td> with sorted bundles for a concept × organiser × level cell.
+ *  Common bundles (key _ALL_) are shown first with a teal divider. */
 function bundleCell(concept, org, l, planning, extraCls = '') {
   const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv) => lv.key));
   if (!applicable.has(l)) {
     return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 bg-slate-50/30 ${extraCls}"></td>`;
   }
-  const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-  return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 ${extraCls}"><div class="space-y-2">${bundleCellHtml(m.groups)}</div></td>`;
+  const lNum = levelByKey(l).plannerNum;
+
+  // Common bundles (ALL key)
+  const commonM   = planning.mappings[`${concept.title}_ALL_L${lNum}`] || { groups: [] };
+  const commonHtml = bundleCellHtml(commonM.groups);
+
+  // Organiser-specific bundles
+  const specificM  = planning.mappings[`${concept.title}_${org.name}_L${lNum}`] || { groups: [] };
+  const specificHtml = bundleCellHtml(specificM.groups);
+
+  const hasCommon   = commonM.groups.length > 0;
+  const hasSpecific = specificM.groups.length > 0;
+
+  if (!hasCommon && !hasSpecific) {
+    return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 ${extraCls}"></td>`;
+  }
+
+  let inner = '';
+  if (hasCommon) {
+    inner += `<div class="space-y-2">${commonHtml}</div>`;
+    if (hasSpecific) {
+      inner += `<div class="flex items-center gap-2 my-2">
+        <div class="flex-1 border-t border-teal-100"></div>
+        <span class="text-[8px] font-black text-teal-500 uppercase tracking-widest shrink-0">${escapeHtml(org.name)}</span>
+        <div class="flex-1 border-t border-teal-100"></div>
+      </div>`;
+    }
+  }
+  if (hasSpecific) {
+    inner += `<div class="space-y-2">${specificHtml}</div>`;
+  }
+
+  return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 ${extraCls}">${inner}</td>`;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// CONCEPTUAL — NORMAL  (rows = concepts, cols = levels)
+/** Returns merged HTML combining common + organiser-specific bundles. */
+function mergedBundlesHtml(concept, orgName, l, planning) {
+  const lNum = levelByKey(l).plannerNum;
+  const commonM    = planning.mappings[`${concept.title}_ALL_L${lNum}`] || { groups: [] };
+  const specificM  = planning.mappings[`${concept.title}_${orgName}_L${lNum}`] || { groups: [] };
+  const commonHtml   = bundleCellHtml(commonM.groups);
+  const specificHtml = bundleCellHtml(specificM.groups);
+  const hasCommon   = commonM.groups.length > 0;
+  const hasSpecific = specificM.groups.length > 0;
+  if (!hasCommon && !hasSpecific) return '<span class="text-[10px] text-slate-300">—</span>';
+  let html = '';
+  if (hasCommon)   { html += `<div class="space-y-2">${commonHtml}</div>`; }
+  if (hasCommon && hasSpecific) {
+    html += `<div class="flex items-center gap-2 my-2">
+      <div class="flex-1 border-t border-teal-100"></div>
+      <span class="text-[8px] font-black text-teal-500 uppercase tracking-widest shrink-0">${escapeHtml(orgName)}</span>
+      <div class="flex-1 border-t border-teal-100"></div>
+    </div>`;
+  }
+  if (hasSpecific) { html += `<div class="space-y-2">${specificHtml}</div>`; }
+  return html;
+}
 // ════════════════════════════════════════════════════════════════════════════
 
 function renderConceptualNormal(ctx) {
@@ -335,8 +387,7 @@ function renderKnowDoNormal(ctx) {
         <td class="p-4 align-top border-r bg-white font-black text-slate-900 text-sm uppercase">${escapeHtml(concept.title)}</td>
         ${levels.map((l) => {
           if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"><span class="text-[9px] text-slate-300 italic">Not applicable</span></td>`;
-          const m = planning.mappings[`${concept.title}_${org.name}_L${levelByKey(l).plannerNum}`] || { groups: [] };
-          return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups) || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
+          return `<td class="p-3 align-top border-r"><div class="space-y-2">${mergedBundlesHtml(concept, org.name, l, planning)}</div></td>`;
         }).join('')}
       </tr>`;
     }
@@ -380,8 +431,7 @@ function renderKnowDoTransposed(ctx) {
           ${concepts.map((concept) => {
             const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv2) => lv2.key));
             if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"></td>`;
-            const m = planning.mappings[`${concept.title}_${org.name}_L${lv.plannerNum}`] || { groups: [] };
-            return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups) || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
+            return `<td class="p-3 align-top border-r"><div class="space-y-2">${mergedBundlesHtml(concept, org.name, l, planning)}</div></td>`;
           }).join('')}
         </tr>`;
       });
@@ -398,8 +448,7 @@ function renderKnowDoTransposed(ctx) {
         ${concepts.map((concept) => {
           const applicable = new Set(concept.applicableLevels ?? LEVELS.map((lv2) => lv2.key));
           if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"><span class="text-[9px] text-slate-300 italic">Not applicable</span></td>`;
-          const m = planning.mappings[`${concept.title}_${org.name}_L${lv.plannerNum}`] || { groups: [] };
-          return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundleCellHtml(m.groups) || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
+          return `<td class="p-3 align-top border-r"><div class="space-y-2">${mergedBundlesHtml(concept, org.name, l, planning)}</div></td>`;
         }).join('')}
       </tr>`;
     }
