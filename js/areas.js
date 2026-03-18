@@ -129,6 +129,10 @@ window.addConceptRow = (data = null) => {
   const container = document.getElementById('concepts-list');
   const div = document.createElement('div');
   div.className = 'concept-item bg-white border border-slate-200 rounded-lg overflow-hidden';
+
+  // Default: all levels applicable if not stored
+  const applicable = data?.applicableLevels ?? ['l1','l2','l3','l4'];
+
   div.innerHTML = `
     <div class="p-3 bg-emerald-50/30 border-b space-y-3">
       <div class="flex justify-between items-center">
@@ -142,6 +146,15 @@ window.addConceptRow = (data = null) => {
         </div>
       </div>
       <textarea placeholder="Overall Concept Description..." class="c-desc w-full text-xs bg-white border border-emerald-100 rounded-md p-2 focus:ring-emerald-500 min-h-[40px]">${escapeHtml(data?.description || '')}</textarea>
+      <div class="flex items-center gap-3 pt-1">
+        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0">Applies to</span>
+        ${[1,2,3,4].map((n) => `
+          <label class="flex items-center gap-1 text-xs font-medium text-slate-600 cursor-pointer">
+            <input type="checkbox" class="c-level-cb rounded text-emerald-600" value="l${n}"
+              ${applicable.includes(`l${n}`) ? 'checked' : ''}>
+            L${n}
+          </label>`).join('')}
+      </div>
     </div>
     <div class="progression-panel collapse-content">
       <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 bg-white">
@@ -201,6 +214,7 @@ window.saveArea = async () => {
   const concepts = Array.from(document.querySelectorAll('.concept-item')).map((item) => ({
     title:       item.querySelector('.c-title').value,
     description: item.querySelector('.c-desc').value,
+    applicableLevels: Array.from(item.querySelectorAll('.c-level-cb:checked')).map((cb) => cb.value),
     levels: {
       l1: item.querySelector('.c-l1').value,
       l2: item.querySelector('.c-l2').value,
