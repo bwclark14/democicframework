@@ -134,7 +134,11 @@ function getMatrixContext() {
 // ── Helper: sort and render a list of bundles into HTML ───────────────────────
 
 function bundleCellHtml(groups) {
-  const sorted = [...(groups || [])].sort((a, b) => (a.sequenceTag ?? 1) - (b.sequenceTag ?? 1));
+  const sorted = [...(groups || [])].sort((a, b) => {
+    const seqDiff = (a.sequenceTag ?? 1) - (b.sequenceTag ?? 1);
+    if (seqDiff !== 0) return seqDiff;
+    return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
+  });
   const allOne = sorted.every((g) => (g.sequenceTag ?? 1) === 1);
   return sorted.map((g) => buildBundleHtml(g, !allOne)).join('');
 }
