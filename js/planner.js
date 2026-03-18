@@ -8,7 +8,7 @@
  */
 
 import { db, APP_ID }                                          from './firebase.js';
-import { state, escapeHtml, triggerMath, getSafeId, updateMathPreview } from './state.js';
+import { state, escapeHtml, triggerMath, getSafeId, updateMathPreview, LEVELS, levelByNum } from './state.js';
 import { doc, setDoc, onSnapshot }
   from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
 
@@ -90,13 +90,13 @@ export function renderPlannerGrid() {
   if (!area) return;
 
   const concept = area.concepts.find((c) => c.title === conceptTitle);
-  const applicable = new Set(concept?.applicableLevels ?? ['l1','l2','l3','l4']);
+  const applicable = new Set(concept?.applicableLevels ?? LEVELS.map(lv=>lv.key));
 
   // Update level tabs — dim non-applicable ones
-  [1,2,3,4].forEach((n) => {
-    const tab = document.getElementById(`tab-l${n}`);
+  LEVELS.forEach((lv) => {
+    const tab = document.getElementById(`tab-${lv.key}`);
     if (!tab) return;
-    const isApplicable = applicable.has(`l${n}`);
+    const isApplicable = applicable.has(lv.key);
     tab.disabled = !isApplicable;
     tab.classList.toggle('opacity-30', !isApplicable);
     tab.classList.toggle('cursor-not-allowed', !isApplicable);
@@ -104,7 +104,8 @@ export function renderPlannerGrid() {
 
   // If current level is not applicable, switch to first applicable
   if (!applicable.has(`l${state.currentPlannerLevel}`)) {
-    const first = [1,2,3,4].find((n) => applicable.has(`l${n}`));
+    const firstLv = LEVELS.find((lv) => applicable.has(lv.key));
+    const first = firstLv?.plannerNum;
     if (first) {
       state.currentPlannerLevel = first;
       document.querySelectorAll('.level-tab').forEach((t) => t.classList.remove('active'));
@@ -117,7 +118,7 @@ export function renderPlannerGrid() {
     document.getElementById('planner-header-desc').innerText     = concept.description || '';
     document.getElementById('planner-level-desc').innerText      =
       concept.levels[`l${state.currentPlannerLevel}`] || 'No level progression statement defined.';
-    document.getElementById('planner-context-level-num').innerText = state.currentPlannerLevel;
+    document.getElementById('planner-context-level-num').innerText = levelByNum(state.currentPlannerLevel).label;
   }
 
   const container = document.getElementById('planner-active-level-view');
@@ -130,7 +131,7 @@ export function renderPlannerGrid() {
         <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
           <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
         </div>
-        <p class="text-sm font-semibold text-slate-500">This concept does not apply to Level ${state.currentPlannerLevel}</p>
+        <p class="text-sm font-semibold text-slate-500">This concept does not apply to the ${levelByNum(state.currentPlannerLevel).label} level</p>
         <p class="text-xs text-slate-400">Update the concept's applicable levels in the Areas editor to enable this level.</p>
       </div>`;
     return;
