@@ -3,6 +3,32 @@
  * Centralised reactive state and small utility functions shared across modules.
  */
 
+// ── Level definitions — single source of truth ────────────────────────────────
+/**
+ * All curriculum levels in display order.
+ * key        — Firestore field key (e.g. "l0") and checkbox value
+ * label      — full display name shown in tabs, headers, matrix columns
+ * short      — abbreviated label for tight spaces
+ * plannerNum — integer stored in state.currentPlannerLevel and Firestore keys (_L0, _L1…)
+ */
+export const LEVELS = [
+  { key: 'l0', label: 'Early',   short: 'E', plannerNum: 0 },
+  { key: 'l1', label: 'First',   short: '1', plannerNum: 1 },
+  { key: 'l2', label: 'Second',  short: '2', plannerNum: 2 },
+  { key: 'l3', label: 'Third',   short: '3', plannerNum: 3 },
+  { key: 'l4', label: 'Fourth',  short: '4', plannerNum: 4 },
+];
+
+/** Look up a level by its key string (e.g. 'l0') */
+export function levelByKey(key) {
+  return LEVELS.find((l) => l.key === key) ?? LEVELS[1];
+}
+
+/** Look up a level by its plannerNum integer (e.g. 0, 1, 2…) */
+export function levelByNum(num) {
+  return LEVELS.find((l) => l.plannerNum === num) ?? LEVELS[1];
+}
+
 // ── Application state ────────────────────────────────────────────────────────
 export const state = {
   user:               null,
@@ -10,7 +36,7 @@ export const state = {
   competencyData:     [],
   allPlanningData:    {},
   currentPlannerData: null,
-  currentPlannerLevel: 1,
+  currentPlannerLevel: 1,   // plannerNum of the active level tab
 };
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
