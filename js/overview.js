@@ -112,38 +112,43 @@ export function renderOverview() {
 
     <section class="space-y-4">
       <h3 class="text-xl font-bold text-slate-800">Conceptual Development</h3>
-      <div class="space-y-6">
+      <div class="space-y-4">
         ${(area.concepts || [])
-          .map(
-            (c) => `
+          .map((c) => {
+            const applicable = c.applicableLevels ?? ['l1','l2','l3','l4'];
+            const cols = applicable.length;
+            const gridCls = cols === 1 ? 'grid-cols-1'
+                          : cols === 2 ? 'grid-cols-2'
+                          : cols === 3 ? 'grid-cols-3'
+                                       : 'grid-cols-2 lg:grid-cols-4';
+            return `
           <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm overview-concept-card">
             <button onclick="toggleProgression(this)" class="w-full flex justify-between items-start p-4 text-left hover:bg-slate-50 transition">
-              <div class="space-y-1 pr-8 text-lg">
-                <h4 class="text-lg font-bold text-emerald-800">${escapeHtml(c.title)}</h4>
-                <p class="text-sm text-slate-600 leading-relaxed">${escapeHtml(c.description)}</p>
+              <div class="space-y-1 pr-8">
+                <h4 class="text-base font-bold text-emerald-800">${escapeHtml(c.title)}</h4>
+                ${c.description ? `<p class="text-sm text-slate-500 leading-relaxed">${escapeHtml(c.description)}</p>` : ''}
+                <div class="flex gap-1.5 flex-wrap">
+                  ${applicable.map((l) => `<span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase">${l}</span>`).join('')}
+                </div>
               </div>
-              <svg class="w-5 h-5 text-slate-400 mt-1 rotate-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              <svg class="w-5 h-5 text-slate-400 mt-1 rotate-icon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
             <div class="collapse-content">
-              <div class="overflow-x-auto border-t border-slate-100">
-                <div class="flex divide-x divide-slate-100 min-w-max">
-                  ${[1, 2, 3, 4]
-                    .map(
-                      (l) => `
-                  <div class="p-5 w-60 lg:w-1/4 min-h-[160px] space-y-3">
-                    <div class="flex items-center space-x-2">
-                      <span class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">L${l}</span>
-                      <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Level ${l}</span>
-                    </div>
-                    <p class="text-xs text-slate-700 leading-relaxed">${escapeHtml(c.levels[`l${l}`]) || 'No progression defined.'}</p>
-                  </div>`,
-                    )
-                    .join('')}
+              <div class="border-t border-slate-100">
+                <div class="grid ${gridCls} divide-x divide-slate-100">
+                  ${applicable.map((lk) => `
+                    <div class="p-4 space-y-2">
+                      <div class="flex items-center gap-1.5">
+                        <span class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">${lk.toUpperCase()}</span>
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Level ${lk.substring(1)}</span>
+                      </div>
+                      <p class="text-xs text-slate-700 leading-relaxed">${escapeHtml(c.levels[lk]) || '<span class="text-slate-300 italic">No statement defined.</span>'}</p>
+                    </div>`).join('')}
                 </div>
               </div>
             </div>
-          </div>`,
-          )
+          </div>`;
+          })
           .join('')}
       </div>
     </section>`;
