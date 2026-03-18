@@ -54,14 +54,18 @@ window.explorerLevelChanged = () => {
   if (!area) return;
 
   const container = document.getElementById('explorer-concepts-list');
-  container.innerHTML = (area.concepts || []).map((c, i) => `
-    <label class="flex items-center gap-2 px-3 py-2 bg-white border rounded-lg cursor-pointer hover:border-indigo-400 transition">
-      <input type="checkbox" class="explorer-concept-cb rounded text-indigo-600" value="${escapeHtml(c.title)}">
-      <span class="text-sm font-medium text-slate-700">${escapeHtml(c.title)}</span>
+  container.innerHTML = (area.concepts || []).map((c) => `
+    <label class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-indigo-400 transition text-xs font-medium text-slate-700 select-none">
+      <input type="checkbox" class="explorer-concept-cb rounded text-indigo-600"
+        value="${escapeHtml(c.title)}" checked
+        onchange="runExplorer()">
+      ${escapeHtml(c.title)}
     </label>`).join('');
 
   document.getElementById('explorer-concepts-row').classList.remove('hidden');
   document.getElementById('explorer-run-btn').classList.remove('hidden');
+  // Auto-run immediately once concepts are available
+  runExplorer();
 };
 
 window.runExplorer = () => {
@@ -131,7 +135,7 @@ window.runExplorer = () => {
               </td>
               ${row.cells.map((cell) => `
                 <td class="p-3 align-top border-r">
-                  <div class="space-y-2">${cell}</div>
+                  <div class="space-y-2 w-full">${cell}</div>
                 </td>`).join('')}
             </tr>`).join('')}
         </tbody>
