@@ -234,10 +234,10 @@ function renderConceptualMatrix(ctx) {
       <tbody>`;
 
   concepts.forEach((concept, cIdx) => {
-    const collapseId = `concept-rows-${cIdx}`;
+    const collapseId   = `concept-rows-${cIdx}`;
+    const applicable   = new Set(concept.applicableLevels ?? ['l1','l2','l3','l4']);
 
     // ── Concept row: name in col 1, level descriptions in level cols ──────────
-    // This row is always visible — it is never collapsed.
     html += `
       <tr class="border-t-2 border-indigo-200 bg-indigo-50/30">
         <td class="p-3 align-top border-r border-slate-200">
@@ -250,13 +250,17 @@ function renderConceptualMatrix(ctx) {
             <span class="font-black text-slate-800 text-sm uppercase tracking-tight leading-snug">${escapeHtml(concept.title)}</span>
           </button>
         </td>
-        ${levels.map((l) => `
-          <td class="p-3 align-top border-r border-slate-200 last:border-r-0">
-            <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(concept.levels[l]) || '<span class="text-slate-300 italic">—</span>'}</p>
-          </td>`).join('')}
+        ${levels.map((l) => applicable.has(l)
+          ? `<td class="p-3 align-top border-r border-slate-200 last:border-r-0">
+               <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(concept.levels[l]) || '<span class="text-slate-300 italic">—</span>'}</p>
+             </td>`
+          : `<td class="p-3 align-top border-r border-slate-200 last:border-r-0 bg-slate-50/50">
+               <span class="text-[9px] text-slate-300 italic">Not applicable</span>
+             </td>`
+        ).join('')}
       </tr>`;
 
-    // ── Organiser rows: these are the collapsible children ────────────────────
+    // ── Organiser rows: collapsible children ──────────────────────────────────
     orgs.forEach((org) => {
       html += `
         <tr class="concept-collapsible-row border-t border-slate-100 hover:bg-slate-50/40"
@@ -265,6 +269,9 @@ function renderConceptualMatrix(ctx) {
             <span class="text-xs font-semibold text-slate-500">${escapeHtml(org.name)}</span>
           </td>
           ${levels.map((l) => {
+            if (!applicable.has(l)) {
+              return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0 bg-slate-50/30"></td>`;
+            }
             const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
             return `<td class="p-3 align-top border-r border-slate-100 last:border-r-0"><div class="space-y-2">${bundleCellHtml(m.groups)}</div></td>`;
           }).join('')}
@@ -310,9 +317,9 @@ function renderKnowDoMatrix(ctx) {
       <tbody class="divide-y">`;
 
   concepts.forEach((concept) => {
+    const applicable = new Set(concept.applicableLevels ?? ['l1','l2','l3','l4']);
 
     if (allOrgs) {
-      // ── Concept header row (no level descriptions) ──
       html += `
         <tr class="bg-indigo-50/30">
           <td colspan="${levels.length + 1}" class="px-4 py-2 font-black text-slate-800 text-sm uppercase border-b border-indigo-100">
@@ -320,10 +327,9 @@ function renderKnowDoMatrix(ctx) {
           </td>
         </tr>`;
 
-      // One sub-row per organiser
       orgs.forEach((org) => {
-        // Skip organiser if it has no bundles across any selected level
         const hasAny = levels.some((l) => {
+          if (!applicable.has(l)) return false;
           const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
           return (m.groups || []).some((g) => hasContent(g));
         });
@@ -333,6 +339,7 @@ function renderKnowDoMatrix(ctx) {
           <tr>
             <td class="p-3 pl-8 align-top border-r bg-slate-50 text-xs font-bold text-slate-600">${escapeHtml(org.name)}</td>
             ${levels.map((l) => {
+              if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"></td>`;
               const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
               const bundles = bundleCellHtml(m.groups);
               return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundles || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
@@ -341,9 +348,9 @@ function renderKnowDoMatrix(ctx) {
       });
 
     } else {
-      // ── Single organiser: concept is the row, cells hold bundles directly ──
       const org = orgs[0];
       const hasAny = levels.some((l) => {
+        if (!applicable.has(l)) return false;
         const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
         return (m.groups || []).some((g) => hasContent(g));
       });
@@ -352,6 +359,7 @@ function renderKnowDoMatrix(ctx) {
         <tr class="${hasAny ? '' : 'opacity-40'}">
           <td class="p-4 align-top border-r bg-white font-black text-slate-900 text-sm uppercase">${escapeHtml(concept.title)}</td>
           ${levels.map((l) => {
+            if (!applicable.has(l)) return `<td class="p-3 align-top border-r bg-slate-50/40"><span class="text-[9px] text-slate-300 italic">Not applicable</span></td>`;
             const m = planning.mappings[`${concept.title}_${org.name}_L${l.substring(1)}`] || { groups: [] };
             const bundles = bundleCellHtml(m.groups);
             return `<td class="p-3 align-top border-r"><div class="space-y-2">${bundles || '<span class="text-[10px] text-slate-300">—</span>'}</div></td>`;
