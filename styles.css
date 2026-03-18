@@ -1,5 +1,3 @@
-
-
 /* ═══════════════════════════════════════════════════════════════════════════
    CURRICULUM DESIGNER — Design System
    Palette: near-black navy (#0f172a) + cool slate surfaces + teal accent (#0d9488)
@@ -523,64 +521,79 @@ button.text-red-600.p-1\.5:hover    { background: #fef2f2 !important; }
 .border-dashed.border-slate-300:hover .text-indigo-500 { color: var(--color-accent) !important; }
 .border-dashed.border-slate-300:hover .text-slate-500  { color: var(--color-accent) !important; }
 
-
-
-
-/*
-
-/* ── Scrollbar ─────────────────────────────────────────────────────────── */
-.custom-scrollbar::-webkit-scrollbar        { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track  { background: #f1f1f1; }
-.custom-scrollbar::-webkit-scrollbar-thumb  { background: #888; border-radius: 10px; }
-
-/* ── Cards ──────────────────────────────────────────────────────────────── */
-.card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-
-/* ── Collapsible panels ─────────────────────────────────────────────────── */
-.collapse-content {
-  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
+/* ── Mobile bottom nav ───────────────────────────────────────────────────── */
+#mobile-nav {
+  box-shadow: 0 -1px 0 var(--color-border), 0 -4px 16px rgba(15,23,42,0.06);
 }
-.collapse-content.expanded { max-height: 2000px; opacity: 1; }
+.mob-nav-btn {
+  font-family: var(--font-ui);
+  color: var(--color-ink-4);
+  transition: color 0.15s, background 0.15s;
+  border-radius: 0;
+  white-space: nowrap;
+}
+.mob-nav-btn:hover { color: var(--color-ink-2); }
+.mob-nav-btn.active-mob {
+  color: var(--color-accent);
+}
+.mob-nav-btn.active-mob svg { stroke: var(--color-accent); }
 
-.rotate-icon { transition: transform 0.3s ease; }
-.rotate-icon.expanded { transform: rotate(180deg); }
+/* Hide native scrollbar on mobile nav */
+#mobile-nav .flex { scrollbar-width: none; -ms-overflow-style: none; }
+#mobile-nav .flex::-webkit-scrollbar { display: none; }
 
-/* ── View transitions ───────────────────────────────────────────────────── */
-.view-transition { transition: opacity 0.2s ease-in-out; }
+/* Add bottom padding so content clears mobile nav (applied via Tailwind pb-24) */
 
-/* ── Print ──────────────────────────────────────────────────────────────── */
-@media print {
-  .no-print   { display: none !important; }
-  .print-only { display: block !important; }
-  body        { background: white; }
+/* ── Responsive: mobile view adjustments ──────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Tighter page padding */
+  main { padding-left: 1rem !important; padding-right: 1rem !important; }
+
+  /* Filter panels: single column, tighter padding */
+  .bg-white.border.rounded-xl.p-6 { padding: 1rem !important; }
+
+  /* Mode toggle: allow wrapping */
+  .flex.items-center.gap-2 { flex-wrap: wrap; }
+
+  /* Planner card grid: always single column on phones */
+  #planner-active-level-view .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Modals: full-screen on mobile */
+  #area-modal > div,
+  #competency-modal > div {
+    max-height: 100dvh !important;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    margin-top: auto !important;
+  }
+  #area-modal,
+  #competency-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  /* Table horizontal scroll hint */
+  .overflow-x-auto::before {
+    content: '';
+    display: block;
+  }
+  .scroll-hint::after {
+    content: '← scroll →';
+    display: block;
+    text-align: center;
+    font-size: 0.6875rem;
+    color: var(--color-ink-4);
+    padding: 6px 0 2px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.05em;
+  }
 }
 
-/* ── Math preview ───────────────────────────────────────────────────────── */
-.math-preview {
-  min-height: 1rem;
-  border-top: 1px dashed #e2e8f0;
-  margin-top: 0.15rem;
-  padding-top: 0.15rem;
-  font-size: 0.7rem;
-  color: #64748b;
+/* ── Tablet (md) refinements ─────────────────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Planner cards: 2 columns on tablet */
+  #planner-active-level-view .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
-
-/* ── Level tabs ─────────────────────────────────────────────────────────── */
-.level-tab.active {
-  border-bottom: 3px solid #4f46e5;
-  color: #4f46e5;
-  background: #f5f3ff;
-}
-
-/* ── Planner view mode toggle ────────────────────────────────────────────── */
-.mode-toggle { color: #64748b; }
-.mode-toggle.active-mode {
-  background: white;
-  color: #4f46e5;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-*/
