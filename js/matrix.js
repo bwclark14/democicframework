@@ -36,44 +36,75 @@ function seqColour(tag) {
 // ── Bundle HTML (shared by matrix and explorer) ───────────────────────────────
 
 export function buildBundleHtml(g, showSeqBadge = true) {
-  const comp    = state.competencyData.find((c) => c.id === g.competencyId);
+  const isLinked = !!g.linkedFrom;
+
+  // For linked bundles, read content from the source
+  const display = isLinked ? resolveLinkedGroupForMatrix(g) ?? g : g;
+
+  const comp    = state.competencyData.find((c) => c.id === (display.competencyId || g.competencyId));
   const tag     = g.sequenceTag ?? 1;
   const colCls  = seqColour(tag);
-  const hasKnow = (g.knowItems || []).some((k) => k.trim());
-  const hasDo   = (g.doItems   || []).some((d) => d.trim());
+  const hasKnow = (display.knowItems || []).some((k) => k.trim());
+  const hasDo   = (display.doItems   || []).some((d) => d.trim());
   const hasBody = hasKnow || hasDo || comp;
 
+  const linkedBadge = isLinked ? `
+    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-teal-50 border border-teal-200 rounded text-[8px] font-black text-teal-600 uppercase tracking-widest shrink-0">
+      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+      Linked
+    </span>` : '';
+
   return `
-    <div class="w-full border border-slate-200 rounded-lg overflow-hidden bundle-card">
+    <div class="w-full border rounded-lg overflow-hidden bundle-card ${isLinked ? 'border-teal-300 ring-1 ring-teal-100' : 'border-slate-200'}">
       <button type="button" onclick="toggleBundle(this)"
-        class="w-full flex items-start gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 transition text-left">
+        class="w-full flex items-start gap-2 px-3 py-2 ${isLinked ? 'bg-teal-50 hover:bg-teal-100' : 'bg-slate-50 hover:bg-slate-100'} transition text-left">
         ${showSeqBadge
           ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${colCls} shrink-0 mt-0.5">${tag}</span>`
           : ''}
-        <span class="text-[11px] font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(g.name || 'Unnamed bundle')}</span>
+        <span class="text-[11px] font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(display.name || g.name || 'Unnamed bundle')}</span>
+        ${linkedBadge}
         ${hasBody ? `<svg class="w-3.5 h-3.5 text-slate-400 rotate-icon shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>` : ''}
       </button>
       ${hasBody ? `
       <div class="bundle-body collapse-content">
-        <div class="p-3 space-y-2 border-t border-slate-100">
+        <div class="p-3 space-y-2 border-t ${isLinked ? 'border-teal-100 bg-teal-50/30' : 'border-slate-100'}">
+          ${isLinked && g.linkedFrom ? `
+            <div class="flex items-center gap-1 text-[8px] text-teal-600 font-semibold mb-1">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+              ${escapeHtml(getAreaTitle(g.linkedFrom.areaId))} — ${escapeHtml(g.linkedFrom.conceptTitle)}
+            </div>` : ''}
           ${comp ? `<button onclick="showCompInfo('${comp.id}')" class="text-[8px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100 uppercase hover:bg-violet-100 transition">${escapeHtml(comp.title)}</button>` : ''}
           ${hasKnow ? `
           <div>
             <span class="text-[8px] font-bold text-indigo-400 uppercase tracking-tighter block mb-1">Know:</span>
             <ul class="list-disc list-outside ml-3 text-[10px] text-slate-700 space-y-1">
-              ${g.knowItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}
+              ${display.knowItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}
             </ul>
           </div>` : ''}
           ${hasDo ? `
           <div>
             <span class="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter block mb-1">Do:</span>
             <ul class="list-disc list-outside ml-3 text-[10px] text-slate-700 font-medium space-y-1">
-              ${g.doItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}
+              ${display.doItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}
             </ul>
           </div>` : ''}
         </div>
       </div>` : ''}
     </div>`;
+}
+
+function resolveLinkedGroupForMatrix(group) {
+  if (!group.linkedFrom) return null;
+  const { areaId, conceptTitle, organiserName, level, bundleIndex } = group.linkedFrom;
+  const planning = state.allPlanningData[areaId];
+  if (!planning?.mappings) return null;
+  const key = `${conceptTitle}_${organiserName}_L${level}`;
+  return planning.mappings[key]?.groups?.[bundleIndex] ?? null;
+}
+
+function getAreaTitle(areaId) {
+  return state.curriculumData.find((a) => a.id === areaId)?.title || 'Unknown area';
+}
 }
 
 // ── Toggle bundle collapse ────────────────────────────────────────────────────
