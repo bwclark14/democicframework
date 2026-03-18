@@ -124,22 +124,37 @@ function renderCardMode(key, container) {
   const grid = document.createElement('div');
   grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start';
 
+  // ── New bundle button
   const addBtn = document.createElement('button');
   addBtn.onclick = () => addPlannerGroup(key);
   addBtn.className =
-    'group border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-indigo-400 hover:bg-indigo-50 transition flex flex-col items-center justify-center space-y-2 h-full min-h-[200px]';
+    'group border-2 border-dashed border-slate-300 rounded-xl p-6 hover:border-indigo-400 hover:bg-indigo-50 transition flex flex-col items-center justify-center space-y-2 min-h-[160px]';
   addBtn.innerHTML = `
     <div class="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition">
       <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
       </svg>
     </div>
-    <span class="font-bold text-slate-500 group-hover:text-indigo-600">New Bundle</span>`;
+    <span class="font-bold text-slate-500 group-hover:text-indigo-600 text-sm">New Bundle</span>`;
+
+  // ── Link existing bundle button
+  const linkBtn = document.createElement('button');
+  linkBtn.onclick = () => openLinkBundleModal(key);
+  linkBtn.className =
+    'group border-2 border-dashed border-teal-200 rounded-xl p-6 hover:border-teal-400 hover:bg-teal-50 transition flex flex-col items-center justify-center space-y-2 min-h-[160px]';
+  linkBtn.innerHTML = `
+    <div class="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition">
+      <svg class="w-6 h-6 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+      </svg>
+    </div>
+    <span class="font-bold text-slate-500 group-hover:text-teal-600 text-sm">Link Bundle</span>`;
 
   (levelData.groups || []).forEach((group, index) => {
     grid.appendChild(createCardEl(key, index, group));
   });
   grid.appendChild(addBtn);
+  grid.appendChild(linkBtn);
   container.appendChild(grid);
   triggerMath();
 }
@@ -148,25 +163,70 @@ function createCardEl(key, index, group) {
   const safeId      = getSafeId(key, index);
   const isCollapsed = group._collapsed ?? false;
   const tag         = group.sequenceTag ?? 1;
+  const isLinked    = !!group.linkedFrom;
+
+  const tagColour = tag === 1 ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                  : tag === 2 ? 'bg-amber-100 text-amber-700 border-amber-200'
+                              : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+
+  // For linked bundles, resolve the source data
+  const resolvedGroup = isLinked ? resolveLinkedBundle(group) : group;
+
+  const div = document.createElement('div');
+  div.className = `bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col ${
+    isLinked ? 'border-teal-300 ring-1 ring-teal-200' : 'border-slate-200'
+  }`;
+
+  if (isLinked) {
+    // ── Read-only linked card ──────────────────────────────────────────────
+    const srcArea = state.curriculumData.find((a) => a.id === group.linkedFrom.areaId);
+    div.innerHTML = `
+      <div class="p-3 bg-teal-50 border-b border-teal-200 flex items-center gap-2 cursor-pointer select-none"
+           onclick="toggleCardCollapse('${key}', ${index})">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${tagColour} shrink-0">${tag}</span>
+        <span class="text-xs font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(resolvedGroup?.name || group.linkedFrom.bundleName || 'Linked bundle')}</span>
+        <svg class="w-3.5 h-3.5 text-teal-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+        <svg class="w-4 h-4 text-slate-400 rotate-icon shrink-0 ${isCollapsed ? '' : 'expanded'}"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+        <button onclick="event.stopPropagation(); removePlannerGroup('${key}', ${index})"
+          class="text-slate-300 hover:text-red-500 p-0.5 shrink-0">&times;</button>
+      </div>
+      <div class="card-body ${isCollapsed ? '' : 'expanded'} collapse-content">
+        <div class="px-4 py-2 bg-teal-50/60 border-b border-teal-100 flex items-center gap-1.5">
+          <svg class="w-3 h-3 text-teal-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          <span class="text-[9px] font-black text-teal-600 uppercase tracking-widest">Linked from</span>
+          <span class="text-[9px] text-teal-700 font-semibold">${escapeHtml(srcArea?.title || 'Unknown area')} — ${escapeHtml(group.linkedFrom.conceptTitle)}</span>
+        </div>
+        <div class="p-4 space-y-3 opacity-75 pointer-events-none select-none" id="linked-preview-${safeId}">
+          <p class="text-[10px] text-slate-400 italic">Content is read-only. Edit in the original curriculum area.</p>
+        </div>
+      </div>`;
+
+    setTimeout(() => {
+      const preview = document.getElementById(`linked-preview-${safeId}`);
+      if (preview && resolvedGroup) {
+        renderLinkedPreview(preview, resolvedGroup);
+      }
+    }, 0);
+
+    return div;
+  }
+
+  // ── Editable card (original) ──────────────────────────────────────────────
   const compOptions =
     '<option value="">-- No Competency --</option>' +
     state.competencyData
       .map((c) => `<option value="${c.id}" ${group.competencyId === c.id ? 'selected' : ''}>${escapeHtml(c.title)}</option>`)
       .join('');
 
-  const tagColour = tag === 1 ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
-                  : tag === 2 ? 'bg-amber-100 text-amber-700 border-amber-200'
-                              : 'bg-emerald-100 text-emerald-700 border-emerald-200';
-
-  const div = document.createElement('div');
-  div.className = 'bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col';
-
   div.innerHTML = `
     <!-- Card header: always visible, click to collapse -->
     <div class="p-3 bg-slate-50 border-b flex items-center gap-2 cursor-pointer select-none"
          onclick="toggleCardCollapse('${key}', ${index})">
       <span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${tagColour} shrink-0">${tag}</span>
-      <span class="text-xs font-bold text-slate-700 flex-1 truncate">${escapeHtml(group.name || 'Unnamed bundle')}</span>
+      <span class="text-xs font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(group.name || 'Unnamed bundle')}</span>
       <svg class="w-4 h-4 text-slate-400 rotate-icon shrink-0 ${isCollapsed ? '' : 'expanded'}"
            fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -181,7 +241,7 @@ function createCardEl(key, index, group) {
         <div class="space-y-1">
           <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Bundle Name</label>
           <input type="text"
-            oninput="updatePlannerValue('${key}', ${index}, 'name', this.value); this.closest('.bg-white').querySelector('.truncate').textContent = this.value || 'Unnamed bundle'"
+            oninput="updatePlannerValue('${key}', ${index}, 'name', this.value); this.closest('.bg-white').querySelector('.break-words').textContent = this.value || 'Unnamed bundle'"
             class="w-full text-xs font-bold border border-slate-200 bg-white rounded-lg px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="e.g. Core Fundamentals" value="${escapeHtml(group.name || '')}">
         </div>
@@ -613,3 +673,177 @@ async function savePlannerState() {
     console.error(e);
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// LINKED BUNDLE SUPPORT
+// ════════════════════════════════════════════════════════════════════════════
+
+/** Resolve a linked bundle's group data from allPlanningData. Returns null if not found. */
+function resolveLinkedBundle(group) {
+  if (!group.linkedFrom) return null;
+  const { areaId, conceptTitle, organiserName, level, bundleIndex } = group.linkedFrom;
+  const planning = state.allPlanningData[areaId];
+  if (!planning?.mappings) return null;
+  const key = `${conceptTitle}_${organiserName}_L${level}`;
+  const m   = planning.mappings[key];
+  if (!m?.groups) return null;
+  return m.groups[bundleIndex] ?? null;
+}
+
+/** Render a read-only preview of a resolved bundle's know/do items into a container element. */
+function renderLinkedPreview(container, g) {
+  const hasKnow = (g.knowItems || []).some((k) => k.trim());
+  const hasDo   = (g.doItems   || []).some((d) => d.trim());
+  container.innerHTML = '';
+  if (!hasKnow && !hasDo) {
+    container.innerHTML = '<p class="text-[10px] text-slate-400 italic">No statements in source bundle.</p>';
+    return;
+  }
+  if (hasKnow) {
+    const d = document.createElement('div');
+    d.innerHTML = `
+      <span class="text-[8px] font-black text-indigo-400 uppercase tracking-widest block mb-1">Know:</span>
+      <ul class="list-disc list-outside ml-3 text-[10px] text-slate-600 space-y-1">
+        ${g.knowItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}
+      </ul>`;
+    container.appendChild(d);
+  }
+  if (hasDo) {
+    const d = document.createElement('div');
+    d.innerHTML = `
+      <span class="text-[8px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Do:</span>
+      <ul class="list-disc list-outside ml-3 text-[10px] text-slate-600 font-medium space-y-1">
+        ${g.doItems.filter((v) => v.trim()).map((v) => `<li>${escapeHtml(v)}</li>`).join('')}
+      </ul>`;
+    container.appendChild(d);
+  }
+}
+
+// ── Link picker modal ─────────────────────────────────────────────────────────
+
+let _linkTargetKey = null; // the planner mapping key we're adding a link to
+
+window.openLinkBundleModal = (key) => {
+  _linkTargetKey = key;
+
+  // Populate area select — exclude the current area
+  const currentAreaId = document.getElementById('planner-area-select').value;
+  const sel = document.getElementById('link-area-select');
+  sel.innerHTML = '<option value="">Choose an area\u2026</option>' +
+    state.curriculumData
+      .filter((a) => a.id !== currentAreaId && (a.status || 'public') === 'public')
+      .map((a) => `<option value="${a.id}">${escapeHtml(a.title)}</option>`)
+      .join('');
+
+  // Reset downstream rows
+  ['link-concept-row','link-organiser-row','link-bundles-row','link-empty-msg'].forEach((id) => {
+    document.getElementById(id).classList.add('hidden');
+  });
+
+  document.getElementById('link-bundle-modal').classList.remove('hidden');
+};
+
+window.closeLinkBundleModal = () => {
+  document.getElementById('link-bundle-modal').classList.add('hidden');
+  _linkTargetKey = null;
+};
+
+window.linkPickerAreaChanged = () => {
+  const areaId = document.getElementById('link-area-select').value;
+  ['link-concept-row','link-organiser-row','link-bundles-row','link-empty-msg'].forEach((id) => {
+    document.getElementById(id).classList.add('hidden');
+  });
+  if (!areaId) return;
+
+  const area = state.curriculumData.find((a) => a.id === areaId);
+  if (!area) return;
+
+  document.getElementById('link-concept-select').innerHTML =
+    '<option value="">Choose a concept\u2026</option>' +
+    (area.concepts || []).map((c) => `<option value="${escapeHtml(c.title)}">${escapeHtml(c.title)}</option>`).join('');
+  document.getElementById('link-concept-row').classList.remove('hidden');
+};
+
+window.linkPickerConceptChanged = () => {
+  ['link-organiser-row','link-bundles-row','link-empty-msg'].forEach((id) => {
+    document.getElementById(id).classList.add('hidden');
+  });
+  const areaId = document.getElementById('link-area-select').value;
+  const area   = state.curriculumData.find((a) => a.id === areaId);
+  if (!area) return;
+  if (!document.getElementById('link-concept-select').value) return;
+
+  document.getElementById('link-organiser-select').innerHTML =
+    '<option value="">Choose an organiser\u2026</option>' +
+    (area.organisers || []).map((o) => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join('');
+  document.getElementById('link-organiser-row').classList.remove('hidden');
+};
+
+window.linkPickerOrganiserChanged = () => {
+  document.getElementById('link-bundles-row').classList.add('hidden');
+  document.getElementById('link-empty-msg').classList.add('hidden');
+
+  const areaId    = document.getElementById('link-area-select').value;
+  const concept   = document.getElementById('link-concept-select').value;
+  const organiser = document.getElementById('link-organiser-select').value;
+  if (!areaId || !concept || !organiser || !_linkTargetKey) return;
+
+  // Derive level from current planner key  e.g. "ConceptA_OrgB_L2" → "2"
+  const levelMatch = _linkTargetKey.match(/_L(\d)$/);
+  const level      = levelMatch ? levelMatch[1] : '1';
+
+  const srcKey   = `${concept}_${organiser}_L${level}`;
+  const planning = state.allPlanningData[areaId] || { mappings: {} };
+  const m        = planning.mappings[srcKey] || { groups: [] };
+  const bundles  = (m.groups || []).filter((g) => !g.linkedFrom); // can't link a link
+
+  const list = document.getElementById('link-bundles-list');
+  if (bundles.length === 0) {
+    list.innerHTML = '';
+    document.getElementById('link-empty-msg').classList.remove('hidden');
+    return;
+  }
+
+  list.innerHTML = bundles.map((g, i) => {
+    const tag     = g.sequenceTag ?? 1;
+    const tagCls  = tag === 1 ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                  : tag === 2 ? 'bg-amber-100 text-amber-700 border-amber-200'
+                              : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    const hasKnow = (g.knowItems || []).some((k) => k.trim());
+    const hasDo   = (g.doItems   || []).some((d) => d.trim());
+    return `
+      <div class="border border-slate-200 rounded-lg overflow-hidden">
+        <div class="flex items-center gap-2 px-3 py-2 bg-slate-50">
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${tagCls} shrink-0">${tag}</span>
+          <span class="text-xs font-bold text-slate-700 flex-1">${escapeHtml(g.name || 'Unnamed bundle')}</span>
+          <button onclick="confirmLinkBundle('${areaId}','${escapeHtml(concept)}','${escapeHtml(organiser)}','${level}',${i},'${escapeHtml(g.name || '')}')"
+            class="px-3 py-1 bg-teal-600 text-white text-[10px] font-bold rounded-md hover:bg-teal-700 transition">
+            Link
+          </button>
+        </div>
+        ${hasKnow || hasDo ? `
+        <div class="px-3 pb-2 pt-1 space-y-1 text-[10px] text-slate-500">
+          ${hasKnow ? `<div><span class="font-bold text-indigo-400">Know: </span>${g.knowItems.filter(v=>v.trim()).join(' · ')}</div>` : ''}
+          ${hasDo   ? `<div><span class="font-bold text-emerald-500">Do: </span>${g.doItems.filter(v=>v.trim()).join(' · ')}</div>` : ''}
+        </div>` : ''}
+      </div>`;
+  }).join('');
+
+  document.getElementById('link-bundles-row').classList.remove('hidden');
+};
+
+window.confirmLinkBundle = (srcAreaId, conceptTitle, organiserName, level, bundleIndex, bundleName) => {
+  if (!_linkTargetKey || !state.currentPlannerData) return;
+  if (!state.currentPlannerData.mappings[_linkTargetKey]) {
+    state.currentPlannerData.mappings[_linkTargetKey] = { groups: [] };
+  }
+  state.currentPlannerData.mappings[_linkTargetKey].groups.push({
+    sequence:    state.currentPlannerData.mappings[_linkTargetKey].groups.length + 1,
+    name:        bundleName,
+    sequenceTag: 1,
+    linkedFrom: { areaId: srcAreaId, conceptTitle, organiserName, level, bundleIndex, bundleName },
+  });
+  closeLinkBundleModal();
+  renderPlannerGrid();
+  savePlannerState();
+};
