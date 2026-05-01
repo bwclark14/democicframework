@@ -61,7 +61,7 @@ window.explorerLevelChanged = () => {
 
   const container = document.getElementById('explorer-concepts-list');
   if (applicableConcepts.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-400 italic">No concepts apply to this level.</p>';
+    container.innerHTML = '<p class="text-xs text-slate-400 italic">No strands apply to this level.</p>';
     document.getElementById('explorer-concepts-row').classList.remove('hidden');
     return;
   }
@@ -90,7 +90,7 @@ window.runExplorer = () => {
   const output = document.getElementById('explorer-output');
 
   if (!areaId || !org || !level || selectedConcepts.length === 0) {
-    output.innerHTML = '<p class="text-slate-400 text-sm italic">Select at least one concept to view the explorer.</p>';
+    output.innerHTML = '<p class="text-slate-400 text-sm italic">Select at least one strand to view the explorer.</p>';
     output.classList.remove('hidden');
     return;
   }
