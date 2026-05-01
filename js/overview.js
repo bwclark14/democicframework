@@ -111,7 +111,7 @@ export function renderOverview() {
     </section>
 
     <section class="space-y-4">
-      <h3 class="text-xl font-bold text-slate-800">Conceptual Development</h3>
+      <h3 class="text-xl font-bold text-slate-800">Strand Development</h3>
       <div class="space-y-4">
         ${(area.concepts || [])
           .map((c) => {
