@@ -182,8 +182,8 @@ export function renderPlannerGrid() {
         <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
           <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
         </div>
-        <p class="text-sm font-semibold text-slate-500">This concept does not apply to the ${levelByNum(state.currentPlannerLevel).label} level</p>
-        <p class="text-xs text-slate-400">Update the concept's applicable levels in the Areas editor to enable this level.</p>
+        <p class="text-sm font-semibold text-slate-500">This strand does not apply to the ${levelByNum(state.currentPlannerLevel).label} level</p>
+        <p class="text-xs text-slate-400">Update the strand's applicable levels in the Areas editor to enable this level.</p>
       </div>`;
     return;
   }
@@ -204,7 +204,7 @@ export function renderPlannerGrid() {
         <svg class="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         <span class="text-xs font-black text-teal-700 uppercase tracking-wide">Common — applies to all organisers</span>
       </div>
-      <span class="text-xs text-slate-400">These bundles appear in every organiser's matrix cells.</span>
+      <span class="text-xs text-slate-400">These sub-strands appear in every organiser's matrix cells.</span>
     </div>`;
   const commonContainer = document.createElement('div');
   if (currentViewMode === 'grid') {
@@ -264,7 +264,7 @@ function renderCardMode(key, container) {
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
       </svg>
     </div>
-    <span class="font-bold text-slate-500 group-hover:text-indigo-600 text-sm">New Bundle</span>`;
+    <span class="font-bold text-slate-500 group-hover:text-indigo-600 text-sm">New Sub-Strand</span>`;
 
   // ── Link existing bundle button
   const linkBtn = document.createElement('button');
@@ -277,7 +277,7 @@ function renderCardMode(key, container) {
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
       </svg>
     </div>
-    <span class="font-bold text-slate-500 group-hover:text-teal-600 text-sm">Link Bundle</span>`;
+    <span class="font-bold text-slate-500 group-hover:text-teal-600 text-sm">Link Sub-Strand</span>`;
 
   (levelData.groups || []).forEach((group, index) => {
     grid.appendChild(createCardEl(key, index, group));
@@ -313,7 +313,7 @@ function createCardEl(key, index, group) {
       <div class="p-3 bg-teal-50 border-b border-teal-200 flex items-center gap-2 cursor-pointer select-none"
            onclick="toggleCardCollapse('${key}', ${index})">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${tagColour} shrink-0">${tag}</span>
-        <span class="text-xs font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(resolvedGroup?.name || group.linkedFrom.bundleName || 'Linked bundle')}</span>
+        <span class="text-xs font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(resolvedGroup?.name || group.linkedFrom.bundleName || 'Linked sub-strand')}</span>
         <svg class="w-3.5 h-3.5 text-teal-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
         <svg class="w-4 h-4 text-slate-400 rotate-icon shrink-0 ${isCollapsed ? '' : 'expanded'}"
              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -355,7 +355,7 @@ function createCardEl(key, index, group) {
     <div class="p-3 bg-slate-50 border-b flex items-center gap-2 cursor-pointer select-none"
          onclick="toggleCardCollapse('${key}', ${index})">
       <span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${tagColour} shrink-0">${tag}</span>
-      <span class="text-xs font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(group.name || 'Unnamed bundle')}</span>
+      <span class="text-xs font-bold text-slate-700 flex-1 min-w-0 break-words leading-snug">${escapeHtml(group.name || 'Unnamed sub-strand')}</span>
       <svg class="w-4 h-4 text-slate-400 rotate-icon shrink-0 ${isCollapsed ? '' : 'expanded'}"
            fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -368,9 +368,9 @@ function createCardEl(key, index, group) {
     <div class="card-body ${isCollapsed ? '' : 'expanded'} collapse-content">
       <div class="p-4 space-y-4">
         <div class="space-y-1">
-          <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Bundle Name</label>
+          <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Sub-Strand Name</label>
           <input type="text"
-            oninput="updatePlannerValue('${key}', ${index}, 'name', this.value); this.closest('.bg-white').querySelector('.break-words').textContent = this.value || 'Unnamed bundle'"
+            oninput="updatePlannerValue('${key}', ${index}, 'name', this.value); this.closest('.bg-white').querySelector('.break-words').textContent = this.value || 'Unnamed sub-strand'"
             class="w-full text-xs font-bold border border-slate-200 bg-white rounded-lg px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="e.g. Core Fundamentals" value="${escapeHtml(group.name || '')}">
         </div>
@@ -460,11 +460,11 @@ function renderGridMode(key, container) {
   const addRow = document.createElement('div');
   addRow.className = 'flex items-center gap-3';
   addRow.innerHTML = `
-    <input id="grid-new-bundle-name" type="text" placeholder="New bundle name…"
+    <input id="grid-new-bundle-name" type="text" placeholder="New sub-strand name…"
       class="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 w-64">
     <button onclick="addGridBundle('${key}')"
       class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition">
-      + Add Bundle
+      + Add Sub-Strand
     </button>`;
   wrapper.appendChild(addRow);
 
@@ -504,7 +504,7 @@ function renderGridMode(key, container) {
       <td class="p-3 align-top border-r">
         <input type="text"
           value="${escapeHtml(displayName)}"
-          placeholder="Bundle name"
+          placeholder="Sub-strand name"
           onchange="renameGridBundle('${key}', '${escapeHtml(rawName)}', this.value)"
           class="w-full text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500">
       </td>`;
@@ -595,6 +595,12 @@ function renderGridMode(key, container) {
           (g.doItems || []).forEach((item, i) =>
             dEl.appendChild(createItemInput(key, gIdx, 'doItems', i, item, true)));
         }
+        const eEl = document.getElementById(`grid-elab-${safeId}`);
+        if (eEl) {
+          eEl.innerHTML = '';
+          (g.elaborations || []).forEach((item, i) =>
+            eEl.appendChild(createItemInput(key, gIdx, 'elaborations', i, item, true)));
+        }
       });
     });
     triggerMath();
@@ -613,6 +619,7 @@ window.addGridBundle = (key) => {
     name,
     knowItems:   [''],
     doItems:     [''],
+    elaborations: [],
     competencyId: '',
     sequenceTag:  1,
   });
@@ -628,6 +635,7 @@ window.addGridCell = (key, bundleName, seqTag) => {
     name:        bundleName,
     knowItems:   [''],
     doItems:     [''],
+    elaborations: [],
     competencyId: '',
     sequenceTag:  seqTag,
   });
@@ -646,7 +654,7 @@ window.renameGridBundle = (key, oldName, newName) => {
 };
 
 window.removeGridBundleRow = (key, rawName) => {
-  if (!confirm('Remove all bundles in this row?')) return;
+  if (!confirm('Remove all sub-strands in this row?')) return;
   const actualName = rawName.startsWith('__unnamed_') ? '' : rawName;
   state.currentPlannerData.mappings[key].groups =
     state.currentPlannerData.mappings[key].groups.filter(
@@ -663,6 +671,7 @@ window.removeGridBundleRow = (key, rawName) => {
 function populateItemContainers(key, index, group, safeId) {
   const kContainer = document.getElementById(`know-items-${safeId}`);
   const dContainer = document.getElementById(`do-items-${safeId}`);
+  const eContainer = document.getElementById(`elab-items-${safeId}`);
   if (kContainer && dContainer) {
     kContainer.innerHTML = '';
     dContainer.innerHTML = '';
@@ -670,6 +679,11 @@ function populateItemContainers(key, index, group, safeId) {
       kContainer.appendChild(createItemInput(key, index, 'knowItems', i, item)));
     (group.doItems || []).forEach((item, i) =>
       dContainer.appendChild(createItemInput(key, index, 'doItems', i, item)));
+    if (eContainer) {
+      eContainer.innerHTML = '';
+      (group.elaborations || []).forEach((item, i) =>
+        eContainer.appendChild(createItemInput(key, index, 'elaborations', i, item)));
+    }
     triggerMath();
   }
 }
@@ -775,6 +789,7 @@ window.addPlannerGroup = (key) => {
     name:         '',
     knowItems:    [''],
     doItems:      [''],
+    elaborations: [],
     competencyId: '',
     sequenceTag:  1,
   });
@@ -783,7 +798,7 @@ window.addPlannerGroup = (key) => {
 };
 
 window.removePlannerGroup = (key, index) => {
-  if (!confirm('Remove this bundle?')) return;
+  if (!confirm('Remove this sub-strand?')) return;
   state.currentPlannerData.mappings[key].groups.splice(index, 1);
   renderPlannerGrid();
   savePlannerState();
@@ -888,7 +903,7 @@ window.linkPickerAreaChanged = () => {
   if (!area) return;
 
   document.getElementById('link-concept-select').innerHTML =
-    '<option value="">Choose a concept\u2026</option>' +
+    '<option value="">Choose a strand\u2026</option>' +
     (area.concepts || []).map((c) => `<option value="${escapeHtml(c.title)}">${escapeHtml(c.title)}</option>`).join('');
   document.getElementById('link-concept-row').classList.remove('hidden');
 };
@@ -944,7 +959,7 @@ window.linkPickerOrganiserChanged = () => {
       <div class="border border-slate-200 rounded-lg overflow-hidden">
         <div class="flex items-center gap-2 px-3 py-2 bg-slate-50">
           <span class="inline-flex items-center justify-center w-5 h-5 rounded border text-[9px] font-black ${tagCls} shrink-0">${tag}</span>
-          <span class="text-xs font-bold text-slate-700 flex-1">${escapeHtml(g.name || 'Unnamed bundle')}</span>
+          <span class="text-xs font-bold text-slate-700 flex-1">${escapeHtml(g.name || 'Unnamed sub-strand')}</span>
           <button onclick="confirmLinkBundle('${areaId}','${escapeHtml(concept)}','${escapeHtml(organiser)}','${level}',${i},'${escapeHtml(g.name || '')}')"
             class="px-3 py-1 bg-teal-600 text-white text-[10px] font-bold rounded-md hover:bg-teal-700 transition">
             Link
