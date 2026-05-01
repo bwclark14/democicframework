@@ -137,7 +137,7 @@
         </div>
         <div id="planner-concept-container" class="hidden">
           <label class="block">
-            <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Concept</span>
+            <span class="text-sm font-bold text-slate-700 uppercase tracking-wide">Strand</span>
             <select id="planner-concept-select" onchange="renderPlannerGrid()" class="mt-1 block w-full rounded-lg border-slate-300 bg-slate-50 p-2 border focus:ring-indigo-500 focus:border-indigo-500"></select>
           </label>
         </div>
@@ -156,8 +156,8 @@
                 class="inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-transform translate-x-0.5"></span>
             </button>
             <div>
-              <span class="text-sm font-bold text-slate-700">Add organiser-specific bundles</span>
-              <p class="text-xs text-slate-400 leading-tight">Enable to add bundles that apply only to a specific organiser</p>
+              <span class="text-sm font-bold text-slate-700">Add organiser-specific sub-strands</span>
+              <p class="text-xs text-slate-400 leading-tight">Enable to add sub-strands that apply only to a specific organiser</p>
             </div>
           </div>
           <!-- Organiser select — only visible when toggled on -->
@@ -202,7 +202,7 @@
       <div id="planner-level-context" class="bg-white border-x border-b border-slate-200 p-6 rounded-b-xl shadow-sm mb-6">
         <div class="flex items-center space-x-2 mb-2">
           <span class="px-2 h-5 rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center justify-center text-[10px] font-bold whitespace-nowrap"><span id="planner-context-level-num">First</span></span>
-          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Conceptual Level Description</span>
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strand Level Description</span>
         </div>
         <p id="planner-level-desc" class="text-sm text-slate-800 italic leading-relaxed"></p>
       </div>
@@ -246,7 +246,7 @@
       </div>
       <!-- Concept filter row — shown after an area is selected -->
       <div id="matrix-concept-filter-row" class="hidden pt-2">
-        <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Concepts</label>
+        <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Strands</label>
         <div id="matrix-concept-list" class="flex flex-wrap gap-2"></div>
       </div>
       <!-- Matrix view mode toggle -->
@@ -290,7 +290,7 @@
   <main id="view-explorer" class="view-transition hidden max-w-[1600px] mx-auto px-4 py-8 pb-24 md:pb-8">
     <div class="mb-8">
       <h2 class="text-2xl font-bold text-slate-900">Level Explorer</h2>
-      <p class="text-slate-500 mt-1">Select an area, organiser, level and concepts to explore Know and Do bundles by sequence.</p>
+      <p class="text-slate-500 mt-1">Select an area, organiser, level and strands to explore Know and Do sub-strands by sequence.</p>
     </div>
 
     <!-- Filter cascade -->
@@ -331,7 +331,7 @@
 
       <!-- Concepts (multi-select as checkboxes) -->
       <div id="explorer-concepts-row" class="hidden">
-        <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Concepts</label>
+        <label class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-2">Strands</label>
         <div id="explorer-concepts-list" class="flex flex-wrap gap-2"></div>
       </div>
 
@@ -351,8 +351,8 @@
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
       <div class="p-5 border-b flex justify-between items-center bg-teal-50 rounded-t-2xl">
         <div>
-          <h3 class="text-base font-bold text-teal-800">Link an Existing Bundle</h3>
-          <p class="text-xs text-teal-600 mt-0.5">Browse another area to reuse one of its bundles at this level.</p>
+          <h3 class="text-base font-bold text-teal-800">Link an Existing Sub-Strand</h3>
+          <p class="text-xs text-teal-600 mt-0.5">Browse another area to reuse one of its sub-strands at this level.</p>
         </div>
         <button onclick="closeLinkBundleModal()" class="text-slate-400 hover:text-slate-600 p-1">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -367,7 +367,7 @@
           </select>
         </div>
         <div id="link-concept-row" class="hidden">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Concept</label>
+          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Strand</label>
           <select id="link-concept-select" onchange="linkPickerConceptChanged()"
             class="w-full rounded-lg border-slate-200 bg-slate-50 p-2 border text-sm"></select>
         </div>
@@ -377,10 +377,10 @@
             class="w-full rounded-lg border-slate-200 bg-slate-50 p-2 border text-sm"></select>
         </div>
         <div id="link-bundles-row" class="hidden">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Available Bundles</label>
+          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Available Sub-Strands</label>
           <div id="link-bundles-list" class="space-y-2"></div>
         </div>
-        <p id="link-empty-msg" class="hidden text-sm text-slate-400 italic text-center py-4">No bundles found for this combination.</p>
+        <p id="link-empty-msg" class="hidden text-sm text-slate-400 italic text-center py-4">No sub-strands found for this combination.</p>
       </div>
     </div>
   </div>
@@ -456,8 +456,8 @@
           </div>
           <div class="space-y-4">
             <div class="flex justify-between items-center border-b pb-2">
-              <h4 class="text-md font-bold text-emerald-600 uppercase tracking-tight">Concepts &amp; Progression</h4>
-              <button type="button" onclick="addConceptRow()" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-md hover:bg-emerald-100">+ Add Concept</button>
+              <h4 class="text-md font-bold text-emerald-600 uppercase tracking-tight">Strands &amp; Progression</h4>
+              <button type="button" onclick="addConceptRow()" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-md hover:bg-emerald-100">+ Add Strand</button>
             </div>
             <div id="concepts-list" class="space-y-4"></div>
           </div>
@@ -475,7 +475,7 @@
                 <div class="w-2 h-5 rounded bg-teal-400"></div>
                 <h4 class="text-md font-bold text-teal-700 uppercase tracking-tight">Common Know &amp; Do</h4>
               </div>
-              <span class="text-xs text-slate-400">Bundles that apply to all organisers</span>
+              <span class="text-xs text-slate-400">Sub-strands that apply to all organisers</span>
             </div>
             <div id="area-common-kd-body" class="space-y-6"></div>
           </div>
@@ -529,5 +529,24 @@
   </div>
 
   <script type="module" src="js/app.js"></script>
+
+  <!-- Modal: Elaboration Overlay -->
+  <div id="elaboration-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh]">
+      <div class="p-5 border-b flex justify-between items-center bg-amber-50 rounded-t-2xl">
+        <div>
+          <h3 class="text-base font-bold text-amber-800" id="elaboration-modal-title">Elaborations</h3>
+          <p class="text-xs text-amber-600 mt-0.5" id="elaboration-modal-subtitle">Sub-strand elaborations</p>
+        </div>
+        <button onclick="closeElaborationModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-5 overflow-y-auto custom-scrollbar flex-1">
+        <div id="elaboration-modal-content" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
