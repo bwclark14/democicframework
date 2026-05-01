@@ -56,6 +56,8 @@ export function buildBundleHtml(g, showSeqBadge = true) {
   const doItems   = (display.doItems   || []).filter((v) => v.trim());
   const hasKnow  = knowItems.length > 0;
   const hasDo    = doItems.length > 0;
+  const elaborations = (display.elaborations || []).filter((e) => e.trim());
+  const hasElabs = elaborations.length > 0;
   const hasBody  = hasKnow || hasDo || comp;
 
   const borderCls = isLinked ? 'border-teal-300 ring-1 ring-teal-100' : 'border-slate-200';
@@ -112,10 +114,10 @@ export function buildBundleHtml(g, showSeqBadge = true) {
           ${hasBody
             ? `<button type="button" onclick="toggleBundle(this.closest('.bundle-card'))"
                 class="group flex items-start gap-1 text-left w-full">
-                <span class="text-[11px] font-bold text-slate-700 break-words leading-snug group-hover:text-indigo-600 transition-colors">${escapeHtml(display.name || g.name || 'Unnamed bundle')}</span>
+                <span class="text-[11px] font-bold text-slate-700 break-words leading-snug group-hover:text-indigo-600 transition-colors">${escapeHtml(display.name || g.name || 'Unnamed sub-strand')}</span>
                 <svg class="w-3 h-3 text-slate-400 group-hover:text-indigo-400 rotate-icon expanded shrink-0 mt-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </button>`
-            : `<span class="text-[11px] font-bold text-slate-700 break-words leading-snug">${escapeHtml(display.name || g.name || 'Unnamed bundle')}</span>`
+            : `<span class="text-[11px] font-bold text-slate-700 break-words leading-snug">${escapeHtml(display.name || g.name || 'Unnamed sub-strand')}</span>`
           }
           ${linkedAttr}
         </div>
@@ -124,6 +126,14 @@ export function buildBundleHtml(g, showSeqBadge = true) {
                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
                Linked
              </span>`
+          : ''}
+        ${hasElabs
+          ? `<button type="button"
+              onclick="event.stopPropagation(); showElaborations(${JSON.stringify(elaborations)}, ${JSON.stringify(display.name || g.name || '')})"
+              class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 border border-amber-200 rounded text-[8px] font-black text-amber-600 uppercase tracking-widest shrink-0 hover:bg-amber-100 transition">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              ${elaborations.length} elaboration${elaborations.length === 1 ? '' : 's'}
+            </button>`
           : ''}
       </div>
 
@@ -402,7 +412,7 @@ function renderKnowDoNormal(ctx) {
 
   let html = `<table class="w-full text-left matrix-table table-fixed border-collapse">
     <thead><tr>
-      <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-44">${allOrgs ? 'Concept / Organiser' : 'Concept'}</th>
+      <th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 w-44">${allOrgs ? 'Strand / Organiser' : 'Concept'}</th>
       ${levels.map((l) => `<th class="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-r border-slate-200 bg-slate-50 last:border-r-0">${levelByKey(l).label}</th>`).join('')}
     </tr></thead>
     <tbody class="divide-y">`;
@@ -568,6 +578,41 @@ export function renderMatrix() {
   }
 
   triggerMath();
+}
+
+// ── Elaboration overlay ───────────────────────────────────────────────────────
+
+window.showElaborations = (elaborations, bundleName) => {
+  const modal    = document.getElementById('elaboration-modal');
+  const title    = document.getElementById('elaboration-modal-title');
+  const subtitle = document.getElementById('elaboration-modal-subtitle');
+  const content  = document.getElementById('elaboration-modal-content');
+  if (!modal) return;
+  title.textContent    = escapeHtmlStr(bundleName) || 'Sub-Strand Elaborations';
+  subtitle.textContent = `${elaborations.length} elaboration${elaborations.length === 1 ? '' : 's'}`;
+  content.innerHTML    = elaborations.map((e, i) => `
+    <div class="flex items-start gap-3 bg-amber-50/60 border border-amber-100 rounded-lg p-3">
+      <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest mt-0.5 shrink-0">${i + 1}</span>
+      <p class="text-sm text-slate-700 leading-relaxed">${escapeHtmlStr(e)}</p>
+    </div>`).join('');
+  modal.classList.remove('hidden');
+};
+
+window.closeElaborationModal = () => {
+  document.getElementById('elaboration-modal')?.classList.add('hidden');
+};
+
+// Close on backdrop click
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('elaboration-modal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) window.closeElaborationModal();
+  });
+});
+
+function escapeHtmlStr(text) {
+  const d = document.createElement('div');
+  d.textContent = text || '';
+  return d.innerHTML;
 }
 
 // ── Expose to window for inline onchange handlers ─────────────────────────────
